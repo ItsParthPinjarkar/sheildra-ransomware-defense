@@ -2,16 +2,602 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>ECHOID — Your voice ID to the E network</title>
-    <link rel="preconnect" href="https://d8j0ntlcm91z4.cloudfront.net" />
+    <title>AutoVault — AI Detects. Blockchain Recovers.</title>
+    <meta name="description" content="A decentralized AI daemon that detects ransomware via behavioral entropy analysis in milliseconds, freezes the attack, and triggers immutable recovery from an IPFS-backed blockchain vault." />
+
+    <!-- Preconnect -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500&family=Sora:wght@200;300;400&display=swap" rel="stylesheet" />
+    <link rel="preconnect" href="https://db.onlinewebfonts.com" />
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" />
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+
+    <!-- Inter & JetBrains Mono Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet" />
+
+    <!-- BubbledotICG-FinePos (Display Font) -->
+    <link href="https://db.onlinewebfonts.com/c/8cb707a9b8a73f8a7403336b861c3074?family=BubbledotICG-FinePos" rel="stylesheet" />
+
+    <!-- Font Awesome 6.5.2 -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+      integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
+
+    <!-- ===== FULL-VIEWPORT COVER BACKGROUND VIDEO ===== -->
+    <div class="bg">
+      <video class="bg-video" autoplay muted loop playsinline>
+        <source
+          src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260809_012548_ef22562c-c0ae-4816-ad9d-f8922af4e6a7.mp4"
+          type="video/mp4"
+        />
+      </video>
+    </div>
+
+    <!-- ===== MAIN PAGE WRAPPER ===== -->
+    <div class="page">
+
+      <!-- ===== HEADER NAVBAR (DESKTOP + MOBILE) ===== -->
+      <header class="header anim" style="--d: 0s">
+
+        <!-- Desktop Header -->
+        <div class="header__desktop">
+          <!-- Logo -->
+          <a href="#" class="logo" id="logoBtn" aria-label="Home">
+            <img src="assets/logo.webp" alt="" width="52" height="52" class="logo__img" />
+          </a>
+
+          <!-- Nav Pill -->
+          <nav class="nav-pill" aria-label="Main navigation">
+            <a href="#" class="nav-pill__link is-active" id="nav-home" data-view="home" aria-current="page">Home</a>
+            <a href="#" class="nav-pill__link" id="nav-soc" data-view="soc">SOC Console</a>
+            <a href="#" class="nav-pill__link" id="nav-sandbox" data-view="sandbox">Entropy Lab</a>
+            <a href="#" class="nav-pill__link" id="nav-contract" data-view="contract">Smart Contract</a>
+            <a href="#" class="nav-pill__link" id="nav-guide" data-view="guide">Beginner Guide</a>
+          </nav>
+
+          <!-- Deploy Agent Button -->
+          <button class="sign-in" id="navDeployBtn">
+            <span class="dot dot--ok"></span> Deploy Agent
+          </button>
+        </div>
+
+        <!-- Mobile Header -->
+        <div class="header__mobile">
+          <a href="#" class="logo logo--mobile" aria-label="Home">
+            <img src="assets/logo.webp" alt="" width="52" height="52" class="logo__img" />
+          </a>
+
+          <button
+            class="burger"
+            id="burgerBtn"
+            type="button"
+            aria-label="Open menu"
+            aria-expanded="false"
+            aria-controls="mobileMenu"
+          >
+            <span class="burger__bar burger__bar--1"></span>
+            <span class="burger__bar burger__bar--2"></span>
+            <span class="burger__bar burger__bar--3"></span>
+          </button>
+        </div>
+      </header>
+
+      <!-- ===== MOBILE MENU OVERLAY ===== -->
+      <div class="menu-overlay" id="menuOverlay" aria-hidden="true"></div>
+
+      <!-- ===== MOBILE MENU SHEET ===== -->
+      <div
+        class="mobile-menu"
+        id="mobileMenu"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Site menu"
+        aria-hidden="true"
+        hidden
+      >
+        <nav class="mobile-menu__nav" aria-label="Mobile navigation">
+          <a href="#" class="mobile-menu__link is-active" data-view="home" style="--i: 0">Home</a>
+          <a href="#" class="mobile-menu__link" data-view="soc" style="--i: 1">SOC Console</a>
+          <a href="#" class="mobile-menu__link" data-view="sandbox" style="--i: 2">Entropy Lab (Simulator)</a>
+          <a href="#" class="mobile-menu__link" data-view="contract" style="--i: 3">Smart Contract</a>
+          <a href="#" class="mobile-menu__link" data-view="guide" style="--i: 4">Beginner Guide</a>
+        </nav>
+        <button class="mobile-menu__signin" id="mobileDeployBtn" style="--i: 5">Deploy Cyber Agent</button>
+      </div>
+
+      <!-- ===================================================================
+           PAGE 1: HERO LANDING VIEW
+           =================================================================== -->
+      <section class="page-view is-active" id="view-home">
+        <main class="hero">
+
+          <!-- Trust Stack Row -->
+          <div class="trust anim" style="--d: 0.05s">
+            <div class="trust__avatars">
+              <!-- Avatar 1: Python -->
+              <div class="trust__avatar trust__avatar--1">
+                <div class="trust__inner">
+                  <i class="fa-brands fa-python" aria-hidden="true"></i>
+                </div>
+              </div>
+              <!-- Avatar 2: Ethereum -->
+              <div class="trust__avatar trust__avatar--2">
+                <div class="trust__inner">
+                  <i class="fa-brands fa-ethereum" aria-hidden="true"></i>
+                </div>
+              </div>
+              <!-- Avatar 3: Linux -->
+              <div class="trust__avatar trust__avatar--3">
+                <div class="trust__inner">
+                  <i class="fa-brands fa-linux" aria-hidden="true"></i>
+                </div>
+              </div>
+            </div>
+
+            <div class="trust__pill">
+              Watchdog &mdash; Brain &mdash; Enforcer &mdash; Vault
+            </div>
+          </div>
+
+          <!-- Main Display Headline -->
+          <h1 class="headline">
+            <span class="headline__line anim" style="--d: 0.12s">AI Detects.</span>
+            <span class="headline__line anim" style="--d: 0.3s">Blockchain Recovers.</span>
+          </h1>
+
+          <!-- Subhead Description -->
+          <p class="subhead anim" style="--d: 0.28s">
+            A decentralized daemon that monitors file entropy in real-time, freezes<br />
+            ransomware mid-attack, and recovers from an immutable IPFS blockchain vault.
+          </p>
+
+          <!-- Interactive Action Buttons -->
+          <div class="hero__cta-group anim" style="--d: 0.4s">
+            <button class="cta" id="heroConsoleBtn">
+              <i class="fa-solid fa-gauge-high"></i> Launch SOC Console
+            </button>
+            <button class="cta cta--ghost" id="heroSandboxBtn">
+              <i class="fa-solid fa-flask"></i> Interactive Entropy Lab
+            </button>
+          </div>
+        </main>
+      </section>
+
+      <!-- ===================================================================
+           PAGE 2: FULL SOC OPERATIONS CONSOLE (FULL-WIDTH WEBPAGE)
+           =================================================================== -->
+      <section class="page-view" id="view-soc">
+        <div class="full-page-container">
+          <div class="page-header">
+            <div>
+              <h2 class="page-title">Security Operations Center (SOC) Console</h2>
+              <p class="page-sub">Real-time sub-millisecond telemetry, process isolation kill switch, and IPFS recovery status.</p>
+            </div>
+            <div class="page-actions">
+              <button class="btn btn--danger" id="attackSimBtn">
+                <i class="fa-solid fa-biohazard"></i> Simulate Ransomware Attack
+              </button>
+              <button class="btn btn--ok" id="resetSimBtn">
+                <i class="fa-solid fa-rotate-left"></i> Reset Firewall & System
+              </button>
+              <button class="btn btn--dim" id="manualSnapBtn">
+                <i class="fa-solid fa-cloud-arrow-up"></i> Manual IPFS Snapshot
+              </button>
+            </div>
+          </div>
+
+          <!-- Top Status Indicators -->
+          <div class="status-strip">
+            <div class="status-card">
+              <span class="status-card__label">AGENT DAEMON STATUS</span>
+              <div class="status-card__val"><span class="dot dot--ok" id="socDot"></span> <span id="agentConnStatus">ONLINE (SIMULATION MODE)</span></div>
+            </div>
+            <div class="status-card">
+              <span class="status-card__label">AI ANOMALY SCORE</span>
+              <div class="status-card__val text-ok" id="socScoreVal">0.08 (SAFE)</div>
+            </div>
+            <div class="status-card">
+              <span class="status-card__label">ENTROPY ANOMALY BOUND</span>
+              <div class="status-card__val text-warn">7.8 / 8.0</div>
+            </div>
+            <div class="status-card">
+              <span class="status-card__label">KILL SWITCH LATENCY</span>
+              <div class="status-card__val text-accent">&lt; 180ms</div>
+            </div>
+          </div>
+
+          <!-- Real-Time Telemetry Grid -->
+          <div class="content-grid content-grid--2col">
+
+            <!-- Chart 1: Shannon Entropy Graph -->
+            <div class="glass-card">
+              <div class="glass-card__header">
+                <span><i class="fa-solid fa-chart-line text-accent"></i> REAL-TIME SHANNON ENTROPY</span>
+                <span class="pill pill--warn" id="socEntropyVal">3.24</span>
+              </div>
+              <div class="glass-card__body glass-card__body--chart">
+                <canvas id="entropyCanvas"></canvas>
+              </div>
+              <div class="glass-card__footer">
+                <span>Normal Files: 3.0 &ndash; 4.5</span>
+                <span class="text-danger">Ransomware Threshold: &ge; 7.8</span>
+              </div>
+            </div>
+
+            <!-- Chart 2: I/O Velocity Graph -->
+            <div class="glass-card">
+              <div class="glass-card__header">
+                <span><i class="fa-solid fa-gauge-high text-info"></i> FILE I/O OPERATIONS / SEC</span>
+                <span class="pill pill--info" id="socIoVal">12/s</span>
+              </div>
+              <div class="glass-card__body glass-card__body--chart">
+                <canvas id="ioCanvas"></canvas>
+              </div>
+              <div class="glass-card__footer">
+                <span>Normal Operations: &lt;15 ops/s</span>
+                <span class="text-danger">Encryption Burst: &ge;50 ops/s</span>
+              </div>
+            </div>
+
+            <!-- Event Terminal Log -->
+            <div class="glass-card glass-card--full">
+              <div class="glass-card__header">
+                <span><i class="fa-solid fa-terminal text-ok"></i> LIVE DAEMON TELEMETRY LOG</span>
+                <button class="btn-sm" id="clearLogsBtn">Clear Log</button>
+              </div>
+              <div class="glass-card__body glass-card__body--terminal" id="terminalLog">
+                <!-- Injected via main.js -->
+              </div>
+            </div>
+
+            <!-- 4-Phase System Status -->
+            <div class="glass-card">
+              <div class="glass-card__header"><span>4-PHASE CYBER ARCHITECTURE STATE</span></div>
+              <div class="glass-card__body">
+                <div class="phase-badge phase-badge--ok" id="bWatchdog">
+                  <i class="fa-solid fa-eye"></i> 1. Watchdog: <strong>ACTIVE OS FILE I/O MONITORING</strong>
+                </div>
+                <div class="phase-badge phase-badge--ok" id="bBrain">
+                  <i class="fa-solid fa-brain"></i> 2. AI Brain: <strong>ISOLATION FOREST ANALYZING</strong>
+                </div>
+                <div class="phase-badge phase-badge--dim" id="bEnforcer">
+                  <i class="fa-solid fa-hand"></i> 3. Enforcer: <strong>STANDBY (0.2s KILL SWITCH)</strong>
+                </div>
+                <div class="phase-badge phase-badge--dim" id="bVault">
+                  <i class="fa-solid fa-vault"></i> 4. Vault: <strong>READY FOR IMMUTABLE RECOVERY</strong>
+                </div>
+              </div>
+            </div>
+
+            <!-- Blockchain Recovery Status -->
+            <div class="glass-card">
+              <div class="glass-card__header"><span>POLYGON AMOY BLOCKCHAIN VAULT</span></div>
+              <div class="glass-card__body glass-card__body--kv">
+                <div class="kv"><span class="kv-key">Network:</span><span class="kv-val text-ok">Polygon Amoy Testnet (ChainId 80002)</span></div>
+                <div class="kv"><span class="kv-key">Latest IPFS CID:</span><span class="kv-val kv-val--code" id="socCid">QmInitialCleanState_v1</span></div>
+                <div class="kv"><span class="kv-key">Contract Address:</span><span class="kv-val kv-val--code">0x742d35Cc6634C0532925a3b844Bc454e4438f44e</span></div>
+                <div class="kv"><span class="kv-key">Last TX Hash:</span><span class="kv-val kv-val--code" id="socTx">0x9f8a...32b1</span></div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================================
+           PAGE 3: INTERACTIVE SHANNON ENTROPY LAB & AUTOMATED FILE INSPECTOR
+           =================================================================== -->
+      <section class="page-view" id="view-sandbox">
+        <div class="full-page-container">
+          <div class="page-header">
+            <div>
+              <h2 class="page-title">Interactive Shannon Entropy & Ransomware File Inspector</h2>
+              <p class="page-sub">Generate automated high-entropy ransomware files or upload/drop suspicious files to trigger the AI Brain kill switch & recovery alert.</p>
+            </div>
+            <span class="badge badge--ok">AUTOMATED THREAT SCANNER</span>
+          </div>
+
+          <!-- AUTOMATED RANSOMWARE FILE CREATOR & UPLOAD DROPZONE SECTOR -->
+          <div class="glass-card glass-card--full" style="margin-bottom: 24px;">
+            <div class="glass-card__header">
+              <span><i class="fa-solid fa-cloud-arrow-up text-danger"></i> AUTOMATED RANSOMWARE FILE CREATOR & THREAT DROPZONE</span>
+              <span class="badge badge--info" id="dropzoneStatusBadge">Ready for File Upload</span>
+            </div>
+            <div class="glass-card__body">
+              <div class="content-grid content-grid--2col" style="align-items: center;">
+                <!-- Step A: Generator -->
+                <div class="generator-box" style="background: rgba(15, 23, 42, 0.05); padding: 18px; border-radius: 14px; border: 1px dashed rgba(15, 23, 42, 0.2);">
+                  <h4 style="font-size: 15px; margin-bottom: 6px; color: #0f172a;"><i class="fa-solid fa-file-shield text-ok"></i> Step 1: Generate Ransomware Test File</h4>
+                  <p class="help-text" style="font-size: 13px; margin-bottom: 12px;">Click below to automatically create a high-entropy encrypted test file (<code>ransomware_payload.locked</code>) with random XOR byte noise ($H(X) \ge 7.92$).</p>
+                  <div class="btn-group">
+                    <button class="btn btn--danger" id="generateRansomFileBtn">
+                      <i class="fa-solid fa-skull"></i> Create Ransomware File (.locked)
+                    </button>
+                    <button class="btn btn--dim" id="autoSimulateAllBtn">
+                      <i class="fa-solid fa-wand-magic-sparkles"></i> 1-Click Auto-Simulate Attack
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Step B: Dropzone -->
+                <div class="dropzone-box">
+                  <div class="dropzone" id="fileDropzone" style="border: 2px dashed #0284c7; border-radius: 14px; padding: 24px; text-align: center; background: rgba(2, 132, 199, 0.06); cursor: pointer; transition: all 0.2s ease;">
+                    <input type="file" id="fileInput" hidden />
+                    <i class="fa-solid fa-file-arrow-up" style="font-size: 32px; color: #0284c7; margin-bottom: 10px;"></i>
+                    <h4 style="font-size: 15px; margin-bottom: 4px; color: #0f172a;">Step 2: Upload or Drag & Drop Suspicious File</h4>
+                    <p style="font-size: 12px; color: #334155;">Drag any file here or <strong style="color: #0284c7; text-decoration: underline;">click to browse</strong> to test automated detection.</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Automated Scan Progress Banner -->
+              <div id="scanResultBanner" style="margin-top: 18px; display: none;" class="phase-badge phase-badge--ok">
+                <i class="fa-solid fa-circle-notch fa-spin"></i> <span id="scanResultText">Analyzing file byte entropy...</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="content-grid content-grid--2col">
+            <!-- Text Editor & Simulator Controls -->
+            <div class="glass-card">
+              <div class="glass-card__header">
+                <span>INPUT FILE CONTENT SIMULATOR</span>
+                <span class="pill pill--info" id="entropyResultPill">Entropy: 3.42</span>
+              </div>
+              <div class="glass-card__body">
+                <p class="help-text">Type plain text below to calculate entropy live. Click <strong>Encrypt with Ransomware XOR</strong> to simulate an encryption loop and watch entropy jump from ~3.4 to ~7.95+!</p>
+                <textarea class="code-editor" id="fileTextEditor" rows="9">CONFIDENTIAL CORPORATE DATA REPORT 2026
+Standard operating procedure and security policy documentation.
+All remote file system connections must pass through multi-factor authentication.</textarea>
+
+                <div class="btn-group" style="margin-top:16px">
+                  <button class="btn btn--danger" id="runRansomwareXorBtn">
+                    <i class="fa-solid fa-lock"></i> Encrypt with Ransomware XOR
+                  </button>
+                  <button class="btn btn--dim" id="restoreSampleTextBtn">
+                    <i class="fa-solid fa-rotate-left"></i> Restore Plain Text Sample
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Live Entropy Diagnostics & Formula -->
+            <div class="glass-card">
+              <div class="glass-card__header">
+                <span>LIVE ENTROPY METER & ANOMALY DIAGNOSTICS</span>
+              </div>
+              <div class="glass-card__body">
+                <div class="meter-box">
+                  <div class="meter-title">CALCULATED SHANNON ENTROPY SCORE</div>
+                  <div class="meter-value" id="liveEntropyScore">3.42</div>
+                  <div class="meter-sub" id="liveEntropyStatus">Status: NORMAL PLAIN TEXT</div>
+                  
+                  <div class="meter-bar">
+                    <div class="meter-fill" id="meterFillBar" style="width: 42.75%;"></div>
+                    <div class="meter-line" style="left: 97.5%;" title="Anomaly Threshold: 7.8"></div>
+                  </div>
+                  <div class="meter-scale">
+                    <span>0.0 (Empty)</span>
+                    <span>3.5 (Normal Text)</span>
+                    <span>7.8 (Ransomware)</span>
+                    <span>8.0 (Max Random)</span>
+                  </div>
+                </div>
+
+                <div class="formula-card">
+                  <div class="formula-title">Shannon Entropy Formula:</div>
+                  <code class="formula-code">H(X) = - ∑ P(xᵢ) · log₂ P(xᵢ)</code>
+                  <p class="formula-desc">Shannon entropy measures byte randomness in a file. Plain text possesses structured byte distributions (~3.0&ndash;4.5). Encrypted ransomware files exhibit uniform random byte frequencies, driving entropy to ~7.9+.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================================
+           PAGE 4: SMART CONTRACT & WEB3 VAULT (FULL WEBPAGE)
+           =================================================================== -->
+      <section class="page-view" id="view-contract">
+        <div class="full-page-container">
+          <div class="page-header">
+            <div>
+              <h2 class="page-title">Solidity Smart Contract & Web3 Recovery Vault</h2>
+              <p class="page-sub">Explore the smart contract logic and trigger on-chain emergency state transitions on Polygon Amoy testnet.</p>
+            </div>
+            <span class="badge badge--ok">SOLIDITY 0.8.20</span>
+          </div>
+
+          <div class="content-grid content-grid--2col">
+            <!-- Smart Contract Code View -->
+            <div class="glass-card">
+              <div class="glass-card__header">
+                <span>AutoVaultRecovery.sol</span>
+                <span>Polygon Amoy</span>
+              </div>
+              <div class="glass-card__body">
+                <pre class="code-block"><code>// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+contract AutoVaultRecovery {
+    string public latestCleanCID;
+    address public authorizedAgent;
+    bool public isCompromised;
+
+    event LockdownTriggered(string cid, uint256 timestamp);
+
+    constructor(string memory _initialCID) {
+        latestCleanCID = _initialCID;
+        authorizedAgent = msg.sender;
+        isCompromised = false;
+    }
+
+    function triggerEmergencyLockdown() external {
+        require(msg.sender == authorizedAgent, "Unauthorized");
+        isCompromised = true;
+        emit LockdownTriggered(latestCleanCID, block.timestamp);
+    }
+
+    function restoreSystem() external {
+        require(msg.sender == authorizedAgent, "Unauthorized");
+        isCompromised = false;
+    }
+}</code></pre>
+              </div>
+            </div>
+
+            <!-- Web3 Transaction Sandbox -->
+            <div class="glass-card">
+              <div class="glass-card__header">
+                <span>INTERACTIVE WEB3 TRANSACTION SANDBOX</span>
+              </div>
+              <div class="glass-card__body">
+                <p class="help-text">Test on-chain state execution directly from the web dashboard. Emits smart contract events and pins clean recovery hashes to IPFS.</p>
+                
+                <div class="glass-card__body--kv" style="margin-bottom:16px">
+                  <div class="kv"><span class="kv-key">Target Network:</span><span class="kv-val text-ok">Polygon Amoy Testnet (ChainId 80002)</span></div>
+                  <div class="kv"><span class="kv-key">IPFS Gateway:</span><span class="kv-val text-ok">Pinata Decentralized Storage</span></div>
+                  <div class="kv"><span class="kv-key">Contract State:</span><span class="kv-val text-ok" id="contractStateText">CLEAN (UNCOMPROMISED)</span></div>
+                </div>
+
+                <div class="btn-group">
+                  <button class="btn btn--danger" id="triggerWeb3LockdownBtn">
+                    <i class="fa-solid fa-bolt"></i> Execute triggerEmergencyLockdown()
+                  </button>
+                  <button class="btn btn--ok" id="restoreWeb3StateBtn">
+                    <i class="fa-solid fa-rotate-left"></i> Execute restoreSystem()
+                  </button>
+                </div>
+
+                <div class="tx-output" id="txOutputBox">
+                  <div class="tx-title">Web3 Execution Log:</div>
+                  <div id="txLogContent">Ready for smart contract transaction call...</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================================
+           PAGE 5: BEGINNER GUIDE & ARCHITECTURE (FULL WEBPAGE)
+           =================================================================== -->
+      <section class="page-view" id="view-guide">
+        <div class="full-page-container">
+          <div class="page-header">
+            <div>
+              <h2 class="page-title">Beginner Guide & System Architecture</h2>
+              <p class="page-sub">Understand how AutoVault detects, isolates, and recovers from ransomware step-by-step.</p>
+            </div>
+            <span class="badge badge--ok">BEGINNER FRIENDLY</span>
+          </div>
+
+          <div class="guide-hero">
+            <h2>🛡️ Ransomware Protection Explained in Plain English</h2>
+            <p>Ransomware encrypts your files and demands money. AutoVault is an intelligent background daemon that monitors file randomness (entropy), stops ransomware in under 200 milliseconds, and restores clean file snapshots from the blockchain.</p>
+          </div>
+
+          <div class="content-grid content-grid--2col">
+            <div class="glass-card">
+              <div class="guide-card">
+                <div class="guide-icon"><i class="fa-solid fa-calculator"></i></div>
+                <h3>1. Shannon Entropy (Randomness Test)</h3>
+                <p>Normal text and files are structured and predictable (Entropy ~ 3.5). Encrypted ransomware files convert content into random noise (Entropy ~ 7.9+). AutoVault detects this sudden jump instantly!</p>
+              </div>
+            </div>
+
+            <div class="glass-card">
+              <div class="guide-card">
+                <div class="guide-icon"><i class="fa-solid fa-gauge-high"></i></div>
+                <h3>2. I/O Velocity (Speed Check)</h3>
+                <p>Humans modify a few files per minute. Ransomware attempts to modify hundreds of files per second. AutoVault monitors file write operations per second to catch rapid encryption loops.</p>
+              </div>
+            </div>
+
+            <div class="glass-card">
+              <div class="guide-card">
+                <div class="guide-icon"><i class="fa-solid fa-hand-fist"></i></div>
+                <h3>3. Instant 0.2s Kill Switch</h3>
+                <p>When an attack is flagged, AutoVault calls Windows <code>SuspendThread</code> to freeze the ransomware process mid-encryption and enforces Windows Firewall rules to block network connections.</p>
+              </div>
+            </div>
+
+            <div class="glass-card">
+              <div class="guide-card">
+                <div class="guide-icon"><i class="fa-solid fa-vault"></i></div>
+                <h3>4. Blockchain IPFS Vault</h3>
+                <p>Normal cloud backups can be deleted if a hacker gains admin privileges. AutoVault stores encrypted clean file snapshots on IPFS and Polygon Smart Contracts. Because blockchain is immutable, no hacker can delete your recovery point!</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== STATS FOOTER ===== -->
+      <footer class="stats">
+        <!-- Stat 1: Kill Switch Response Time -->
+        <div class="stat anim" style="--d: 0.5s">
+          <span class="stat__icon" aria-hidden="true">&lt;</span>
+          <span class="stat__value" data-target="200" data-suffix="ms" data-decimals="0" data-duration="1500" data-delay="480">0ms</span>
+          <span class="stat__label">Kill Switch Response</span>
+        </div>
+        <!-- Stat 2: Behavioral Detection Accuracy -->
+        <div class="stat anim" style="--d: 0.58s">
+          <span class="stat__icon" aria-hidden="true">%</span>
+          <span class="stat__value" data-target="99.97" data-suffix="%" data-decimals="2" data-duration="1580" data-delay="570">0%</span>
+          <span class="stat__label">Detection Accuracy</span>
+        </div>
+        <!-- Stat 3: Autonomous Monitoring -->
+        <div class="stat anim" style="--d: 0.66s">
+          <span class="stat__icon" aria-hidden="true">*</span>
+          <span class="stat__value" data-target="24" data-suffix="/7" data-decimals="0" data-duration="1660" data-delay="660">0/7</span>
+          <span class="stat__label">Autonomous Guard</span>
+        </div>
+        <!-- Stat 4: Entropy Anomaly Threshold -->
+        <div class="stat anim" style="--d: 0.74s">
+          <span class="stat__icon" aria-hidden="true">#</span>
+          <span class="stat__value" data-target="7.8" data-suffix="" data-decimals="1" data-duration="1740" data-delay="750">0.0</span>
+          <span class="stat__label">Entropy Threshold</span>
+        </div>
+      </footer>
+
+    </div><!-- /.page -->
+
+    <!-- ===== RANSOMWARE THREAT POPUP MODAL ===== -->
+    <div class="threat-popup" id="threatPopup" hidden aria-hidden="true">
+      <div class="threat-popup__box">
+        <div class="threat-popup__header">
+          <i class="fa-solid fa-biohazard"></i>
+          <span>RANSOMWARE ATTACK DETECTED</span>
+        </div>
+        <div class="threat-popup__body">
+          <p>The AI Brain detected a critical anomaly! Shannon Entropy reached <strong id="popEntropy">7.94</strong> with I/O velocity at <strong id="popIo">284 ops/s</strong>.</p>
+          <div class="threat-popup__info">
+            <div>Process: <code id="popProc">malware_sim.exe</code></div>
+            <div>PID: <code id="popPid">4920</code></div>
+          </div>
+        </div>
+        <div class="threat-popup__actions">
+          <button class="btn btn--danger" id="popLockdownBtn">Execute Instant Lockdown</button>
+          <button class="btn btn--dim" id="popDismissBtn">Dismiss Alert</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Application JS -->
+    <script type="module" src="main.js"></script>
   </body>
 </html>

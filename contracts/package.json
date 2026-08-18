@@ -1,0 +1,13 @@
+{
+  "name": "autovault-contracts",
+  "version": "1.0.0",
+  "description": "AutoVault smart contracts deployment",
+  "scripts": {
+    "deploy:amoy": "node deploy.js amoy",
+    "deploy:sepolia": "node deploy.js sepolia"
+  },
+  "dependencies": {
+    "ethers": "^6.9.0",
+    "dotenv": "^16.3.1"
+  }
+}

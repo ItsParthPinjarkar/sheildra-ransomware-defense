@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AutoVault :: Security Operations Center</title>
+  <meta name="description" content="Real-time AI ransomware detection and blockchain recovery dashboard." />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <link rel="stylesheet" href="dashboard.css" />
+</head>
+<body>
+
+  <!-- Scanlines overlay -->
+  <div class="scanlines" aria-hidden="true"></div>
+
+  <!-- Corner decorations -->
+  <div class="corner corner--tl" aria-hidden="true"></div>
+  <div class="corner corner--tr" aria-hidden="true"></div>
+  <div class="corner corner--bl" aria-hidden="true"></div>
+  <div class="corner corner--br" aria-hidden="true"></div>
+
+  <!-- ===== STATUS BAR ===== -->
+  <header class="status-bar" role="banner">
+    <div class="status-bar__brand">
+      <span class="status-bar__logo">◈</span>
+      <span class="status-bar__name">AUTOVAULT</span>
+      <span class="status-bar__ver">SOC v1.0</span>
+    </div>
+
+    <div class="status-bar__center">
+      <div class="status-bar__conn" id="connStatus">
+        <span class="dot dot--warn" id="connDot"></span>
+        <span id="connLabel">DEMO MODE</span>
+      </div>
+    </div>
+
+    <div class="status-bar__right">
+      <div class="threat-badge" id="threatBadge" data-level="NORMAL">
+        <span class="threat-badge__icon">▲</span>
+        <span class="threat-badge__label">THREAT:</span>
+        <span class="threat-badge__level" id="threatLevel">NORMAL</span>
+      </div>
+      <div class="status-bar__clock" id="clock">00:00:00</div>
+    </div>
+  </header>
+
+  <!-- ===== MAIN GRID ===== -->
+  <main class="soc-grid" role="main">
+
+    <!-- ─── LEFT COLUMN: Charts ─── -->
+    <section class="col col--left" aria-label="Telemetry charts">
+
+      <!-- Entropy Chart -->
+      <div class="panel" id="panelEntropy">
+        <div class="panel__header">
+          <div class="panel__title">
+            <span class="panel__bracket">[</span>SHANNON ENTROPY<span class="panel__bracket">]</span>
+          </div>
+          <div class="panel__meta">
+            <span class="tag tag--muted">THRESHOLD: 7.8</span>
+            <span class="tag" id="entropyTag">3.24</span>
+          </div>
+        </div>
+        <div class="panel__body panel__body--chart">
+          <canvas id="entropyChart" role="img" aria-label="Shannon entropy over time"></canvas>
+        </div>
+        <div class="panel__footer">
+          <span class="metric-row">
+            <span class="metric-row__label">CURRENT</span>
+            <span class="metric-row__val" id="entropyCurrent">3.24</span>
+          </span>
+          <span class="metric-row">
+            <span class="metric-row__label">PEAK</span>
+            <span class="metric-row__val metric-row__val--warn" id="entropyPeak">4.12</span>
+          </span>
+          <span class="metric-row">
+            <span class="metric-row__label">STATUS</span>
+            <span class="metric-row__val metric-row__val--ok" id="entropyStatus">NORMAL</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- I/O Velocity Chart -->
+      <div class="panel" id="panelIO">
+        <div class="panel__header">
+          <div class="panel__title">
+            <span class="panel__bracket">[</span>I/O VELOCITY<span class="panel__bracket">]</span>
+          </div>
+          <div class="panel__meta">
+            <span class="tag tag--muted">THRESHOLD: 50/s</span>
+            <span class="tag" id="ioTag">12/s</span>
+          </div>
+        </div>
+        <div class="panel__body panel__body--chart">
+          <canvas id="ioChart" role="img" aria-label="File I/O operations per second"></canvas>
+        </div>
+        <div class="panel__footer">
+          <span class="metric-row">
+            <span class="metric-row__label">WRITES/s</span>
+            <span class="metric-row__val" id="ioCurrent">12</span>
+          </span>
+          <span class="metric-row">
+            <span class="metric-row__label">EXT CHURN</span>
+            <span class="metric-row__val" id="ioChurn">0</span>
+          </span>
+          <span class="metric-row">
+            <span class="metric-row__label">FILES</span>
+            <span class="metric-row__val" id="filesScanned">10</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- Anomaly Score Meter -->
+      <div class="panel panel--score" id="panelScore">
+        <div class="panel__header">
+          <div class="panel__title"><span class="panel__bracket">[</span>AI ANOMALY SCORE<span class="panel__bracket">]</span></div>
+          <span class="tag tag--muted">Isolation Forest</span>
+        </div>
+        <div class="panel__body">
+          <div class="score-meter">
+            <div class="score-meter__bar">
+              <div class="score-meter__fill" id="scoreFill" style="width:8%"></div>
+              <div class="score-meter__threshold"></div>
+            </div>
+            <div class="score-meter__labels">
+              <span>SAFE</span><span>ELEVATED</span><span>CRITICAL</span>
+            </div>
+          </div>
+          <div class="score-value">
+            <span class="score-value__num" id="scoreNum">0.08</span>
+            <span class="score-value__label">confidence</span>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ─── CENTER: Terminal Log ─── -->
+    <section class="col col--center" aria-label="Live event log">
+      <div class="panel panel--terminal">
+        <div class="panel__header">
+          <div class="panel__title">
+            <span class="panel__bracket">[</span>LIVE THREAT FEED<span class="panel__bracket">]</span>
+          </div>
+          <div class="panel__meta">
+            <span class="dot dot--ok is-pulse"></span>
+            <span class="tag tag--muted" id="logCount">0 events</span>
+            <button class="btn-clear" id="clearLogBtn" title="Clear log">CLR</button>
+          </div>
+        </div>
+        <div class="terminal" id="terminal" role="log" aria-live="polite" aria-label="Security event log"></div>
+        <div class="panel__footer panel__footer--actions">
+          <button class="action-btn action-btn--warn" id="simAttackBtn">
+            <i class="fa-solid fa-biohazard"></i> SIMULATE ATTACK
+          </button>
+          <button class="action-btn action-btn--ok" id="resetBtn">
+            <i class="fa-solid fa-rotate"></i> RESET SYSTEM
+          </button>
+          <button class="action-btn action-btn--dim" id="snapshotBtn">
+            <i class="fa-solid fa-database"></i> MANUAL SNAPSHOT
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── RIGHT COLUMN: Status panels ─── -->
+    <section class="col col--right" aria-label="System status">
+
+      <!-- Process Monitor -->
+      <div class="panel" id="panelProcess">
+        <div class="panel__header">
+          <div class="panel__title"><span class="panel__bracket">[</span>PROCESS MONITOR<span class="panel__bracket">]</span></div>
+          <span class="tag tag--muted" id="procCount">1 active</span>
+        </div>
+        <div class="panel__body">
+          <div class="proc-table" id="processTable">
+            <div class="proc-row proc-row--header">
+              <span>PID</span><span>PROCESS</span><span>ENTROPY</span><span>RISK</span>
+            </div>
+            <!-- Dynamic rows injected by JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Blockchain Vault -->
+      <div class="panel" id="panelVault">
+        <div class="panel__header">
+          <div class="panel__title"><span class="panel__bracket">[</span>BLOCKCHAIN VAULT<span class="panel__bracket">]</span></div>
+          <span class="tag" id="vaultNet">DEMO NET</span>
+        </div>
+        <div class="panel__body">
+          <div class="vault-item">
+            <span class="vault-item__label">NETWORK</span>
+            <span class="vault-item__val vault-item__val--ok" id="vaultNetwork">Polygon Amoy</span>
+          </div>
+          <div class="vault-item">
+            <span class="vault-item__label">CONTRACT</span>
+            <span class="vault-item__val vault-item__val--hash" id="vaultContract">0xDemo...Vault</span>
+          </div>
+          <div class="vault-item">
+            <span class="vault-item__label">LATEST CID</span>
+            <span class="vault-item__val vault-item__val--hash" id="vaultCID">Awaiting snapshot...</span>
+          </div>
+          <div class="vault-item">
+            <span class="vault-item__label">LAST TX</span>
+            <span class="vault-item__val vault-item__val--hash" id="vaultTX">—</span>
+          </div>
+          <div class="vault-item">
+            <span class="vault-item__label">SNAPSHOTS</span>
+            <span class="vault-item__val" id="vaultSnaps">0</span>
+          </div>
+          <div class="vault-item">
+            <span class="vault-item__label">INTEGRITY</span>
+            <span class="vault-item__val vault-item__val--ok" id="vaultInteg">✓ VERIFIED</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Brain Status -->
+      <div class="panel" id="panelBrain">
+        <div class="panel__header">
+          <div class="panel__title"><span class="panel__bracket">[</span>AI BRAIN<span class="panel__bracket">]</span></div>
+          <span class="tag tag--ok">ONLINE</span>
+        </div>
+        <div class="panel__body">
+          <div class="vault-item">
+            <span class="vault-item__label">MODEL</span>
+            <span class="vault-item__val vault-item__val--ok">Isolation Forest</span>
+          </div>
+          <div class="vault-item">
+            <span class="vault-item__label">ESTIMATORS</span>
+            <span class="vault-item__val">100</span>
+          </div>
+          <div class="vault-item">
+            <span class="vault-item__label">FEATURES</span>
+            <span class="vault-item__val">Entropy, I/O, Churn</span>
+          </div>
+          <div class="vault-item">
+            <span class="vault-item__label">CONTAMINATION</span>
+            <span class="vault-item__val">5%</span>
+          </div>
+          <div class="vault-item">
+            <span class="vault-item__label">DECISIONS</span>
+            <span class="vault-item__val" id="brainDecisions">0</span>
+          </div>
+          <div class="vault-item">
+            <span class="vault-item__label">LAST ACTION</span>
+            <span class="vault-item__val" id="brainLastAction">Monitoring</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- System Phases -->
+      <div class="panel panel--phases" id="panelPhases">
+        <div class="panel__header">
+          <div class="panel__title"><span class="panel__bracket">[</span>SYSTEM PHASES<span class="panel__bracket">]</span></div>
+        </div>
+        <div class="panel__body">
+          <div class="phase-list">
+            <div class="phase-item phase-item--ok" id="phaseWatchdog">
+              <span class="phase-item__icon">◈</span>
+              <span class="phase-item__name">WATCHDOG</span>
+              <span class="phase-item__status">ACTIVE</span>
+            </div>
+            <div class="phase-item phase-item--ok" id="phaseBrain">
+              <span class="phase-item__icon">◈</span>
+              <span class="phase-item__name">BRAIN (AI)</span>
+              <span class="phase-item__status">ANALYZING</span>
+            </div>
+            <div class="phase-item phase-item--dim" id="phaseEnforcer">
+              <span class="phase-item__icon">◈</span>
+              <span class="phase-item__name">ENFORCER</span>
+              <span class="phase-item__status">STANDBY</span>
+            </div>
+            <div class="phase-item phase-item--dim" id="phaseVault">
+              <span class="phase-item__icon">◈</span>
+              <span class="phase-item__name">VAULT</span>
+              <span class="phase-item__status">IDLE</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- ===== THREAT ALERT OVERLAY ===== -->
+  <div class="threat-overlay" id="threatOverlay" hidden aria-modal="true" role="alertdialog" aria-label="Threat detected">
+    <div class="threat-box">
+      <div class="threat-box__header">
+        <span class="threat-box__icon">⚠</span>
+        <span class="threat-box__title">RANSOMWARE DETECTED</span>
+        <span class="threat-box__icon">⚠</span>
+      </div>
+      <div class="threat-box__grid">
+        <div class="threat-box__stat">
+          <span class="threat-box__stat-label">ENTROPY</span>
+          <span class="threat-box__stat-val" id="alertEntropy">7.92</span>
+        </div>
+        <div class="threat-box__stat">
+          <span class="threat-box__stat-label">I/O VELOCITY</span>
+          <span class="threat-box__stat-val" id="alertIO">284/s</span>
+        </div>
+        <div class="threat-box__stat">
+          <span class="threat-box__stat-label">PROCESS</span>
+          <span class="threat-box__stat-val" id="alertProcess">unknown.exe</span>
+        </div>
+        <div class="threat-box__stat">
+          <span class="threat-box__stat-label">PID</span>
+          <span class="threat-box__stat-val" id="alertPID">—</span>
+        </div>
+      </div>
+      <div class="threat-box__actions">
+        <button class="threat-btn threat-btn--primary" id="lockdownBtn">
+          <i class="fa-solid fa-lock"></i> TRIGGER LOCKDOWN
+        </button>
+        <button class="threat-btn threat-btn--secondary" id="dismissBtn">
+          DISMISS
+        </button>
+      </div>
+      <div class="threat-box__progress" id="autoLockProgress">
+        <div class="threat-box__progress-bar" id="autoLockBar"></div>
+        <span class="threat-box__progress-label">Auto-lockdown in <span id="autoLockCountdown">10</span>s</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== LOCKDOWN FLASH ===== -->
+  <div class="lockdown-flash" id="lockdownFlash" hidden aria-hidden="true">
+    <div class="lockdown-flash__inner">
+      <div class="lockdown-flash__icon">🔒</div>
+      <div class="lockdown-flash__title">LOCKDOWN ENFORCED</div>
+      <div class="lockdown-flash__sub" id="lockdownSub">Process suspended · Network isolated · Vault secured</div>
+      <div class="lockdown-flash__cid">IPFS CID: <span id="lockdownCID">—</span></div>
+      <div class="lockdown-flash__tx">TX: <span id="lockdownTX">—</span></div>
+    </div>
+  </div>
+
+  <script src="dashboard.js"></script>
+</body>
+</html>
