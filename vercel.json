@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "name": "echoid-ai-search-platform",
+  "name": "autovault",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "installCommand": "npm install",
