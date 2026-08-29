@@ -9,7 +9,6 @@ on:
 jobs:
   pr_agent_job:
     runs-on: ubuntu-latest
-    # Only run on PRs, not on issue comments that aren't PR commands
     if: >
       (github.event_name == 'pull_request') ||
       (github.event_name == 'issue_comment' && 
@@ -28,6 +27,7 @@ jobs:
         uses: the-pr-agent/pr-agent@main
         env:
           OPENAI_KEY: ${{ secrets.OPENAI_KEY }}
+          OPENAI__API_BASE: "https://openrouter.ai/api/v1"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           command: review
@@ -37,24 +37,7 @@ jobs:
         uses: the-pr-agent/pr-agent@main
         env:
           OPENAI_KEY: ${{ secrets.OPENAI_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          command: describe
-
-  # Generate PR description on creation
-  pr_describe_job:
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request' && github.event.action == 'opened'
-    
-    permissions:
-      contents: read
-      pull-requests: write
-      
-    steps:
-      - name: PR Agent describe
-        uses: the-pr-agent/pr-agent@main
-        env:
-          OPENAI_KEY: ${{ secrets.OPENAI_KEY }}
+          OPENAI__API_BASE: "https://openrouter.ai/api/v1"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           command: describe
