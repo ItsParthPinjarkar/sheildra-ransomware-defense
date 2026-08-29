@@ -3,7 +3,7 @@
 
 [config]
 # Use OpenRouter as OpenAI-compatible provider
-model = "openai/gpt-4o"
+model = "gpt-4o"
 fallback_models = ["openai/gpt-4o-mini"]
 tools = ["review", "improve", "describe"]
 
