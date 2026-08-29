@@ -1,0 +1,67 @@
+# PR-Agent / Qodo Configuration for AutoVault
+# This configures how the AI code review behaves on PRs.
+
+[config]
+# Model to use for review (GPT-4o recommended for quality)
+model = "gpt-4o"
+# Enable all review tools
+tools = ["review", "improve", "describe"]
+
+[pr_reviewer]
+# Enable security scanning
+enable_security_scanning = true
+# Review effort: "light", "medium", "heavy", "extra_heavy"
+review_effort = "extra_heavy"
+# Require score threshold
+require_score_threshold = true
+# Enable type labels
+enable_review_labels_security = true
+# Extra instructions for the reviewer
+extra_instructions = """
+Focus on:
+1. Security vulnerabilities (especially in MCP tool implementations)
+2. Error handling in async functions
+3. Proper input validation for all tool parameters
+4. Thread safety in multi-agent orchestration
+5. Resource cleanup and memory management
+"""
+
+[pr_code_suggestions]
+# Enable code improvement suggestions
+num_code_suggestions = 5
+# Focus on important suggestions
+prioritize_suggestions = true
+# Extra instructions for suggestions
+extra_instructions = """
+Prioritize:
+1. Security hardening
+2. Performance optimization
+3. Type safety improvements
+4. Error handling completeness
+"""
+
+[pr_description]
+# Auto-generate PR descriptions
+enable_semantic_types = true
+# Enable walk-through generation
+enable_walkthrough = true
+# Extra instructions for description
+extra_instructions = """
+Include:
+1. Which TrueForge features are being used
+2. Which MCP tools are affected
+3. Any security implications
+4. Testing steps
+"""
+
+[pr_code_theme]
+# Code theme for review
+color_comments_for_suggestions = true
+
+[handle_push_trigger]
+# Re-review on every push to the PR
+handle_push_trigger = true
+
+[dismiss_invalid_review_comments]
+# Auto-dismiss invalid review comments
+dismiss_invalid_review_comments = true

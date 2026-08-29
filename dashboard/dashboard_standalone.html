@@ -1,0 +1,1961 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AutoVault :: Security Operations Center</title>
+  <meta name="description" content="Real-time AI ransomware detection and blockchain recovery dashboard." />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <style>
+/* =============================================
+   AUTOVAULT SOC DASHBOARD CSS
+   Retro-futuristic Cyberpunk/SOC Security Theme
+   ============================================= */
+
+:root {
+  --bg-dark: #07090e;
+  --bg-panel: rgba(13, 17, 24, 0.85);
+  --bg-panel-border: rgba(0, 255, 170, 0.15);
+  --text-main: #e0e6ed;
+  --text-dim: #7a889b;
+  --accent-green: #00ffaa;
+  --accent-green-glow: rgba(0, 255, 170, 0.3);
+  --accent-cyan: #00e5ff;
+  --accent-red: #ff3366;
+  --accent-red-glow: rgba(255, 51, 102, 0.4);
+  --accent-yellow: #ffcc00;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-sans: 'Inter', sans-serif;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-dark);
+  color: var(--text-main);
+  font-family: var(--font-mono);
+  min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
+  background-image: 
+    radial-gradient(circle at 50% 50%, rgba(0, 255, 170, 0.03) 0%, transparent 80%),
+    linear-gradient(rgba(0, 255, 170, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 170, 0.02) 1px, transparent 1px);
+  background-size: 100% 100%, 30px 30px, 30px 30px;
+}
+
+/* Scanlines overlay */
+.scanlines {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(
+    rgba(18, 16, 16, 0) 50%, 
+    rgba(0, 0, 0, 0.25) 50%
+  );
+  background-size: 100% 4px;
+  z-index: 999;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+/* HUD Corners */
+.corner {
+  position: fixed;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--accent-green);
+  z-index: 10;
+  pointer-events: none;
+  opacity: 0.5;
+}
+.corner--tl { top: 10px; left: 10px; border-right: none; border-bottom: none; }
+.corner--tr { top: 10px; right: 10px; border-left: none; border-bottom: none; }
+.corner--bl { bottom: 10px; left: 10px; border-right: none; border-top: none; }
+.corner--br { bottom: 10px; right: 10px; border-left: none; border-top: none; }
+
+/* Status Bar */
+.status-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 24px;
+  background: rgba(10, 14, 20, 0.95);
+  border-bottom: 1px solid var(--bg-panel-border);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(8px);
+}
+
+.status-bar__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+
+.status-bar__logo {
+  color: var(--accent-green);
+  font-size: 1.2rem;
+  text-shadow: 0 0 10px var(--accent-green-glow);
+}
+
+.status-bar__ver {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.status-bar__center {
+  display: flex;
+  align-items: center;
+}
+
+.status-bar__conn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.dot--ok { background-color: var(--accent-green); box-shadow: 0 0 8px var(--accent-green); }
+.dot--warn { background-color: var(--accent-yellow); box-shadow: 0 0 8px var(--accent-yellow); }
+.dot--danger { background-color: var(--accent-red); box-shadow: 0 0 8px var(--accent-red); }
+.is-pulse { animation: pulse 1.5s infinite; }
+
+@keyframes pulse {
+  0% { opacity: 0.3; }
+  50% { opacity: 1; }
+  100% { opacity: 0.3; }
+}
+
+.status-bar__right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.threat-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  background: rgba(0, 255, 170, 0.1);
+  border: 1px solid var(--accent-green);
+  color: var(--accent-green);
+}
+
+.threat-badge[data-level="CRITICAL"],
+.threat-badge[data-level="HIGH"] {
+  background: rgba(255, 51, 102, 0.2);
+  border-color: var(--accent-red);
+  color: var(--accent-red);
+  animation: blink-bg 0.8s infinite alternate;
+}
+
+@keyframes blink-bg {
+  0% { background: rgba(255, 51, 102, 0.1); }
+  100% { background: rgba(255, 51, 102, 0.35); }
+}
+
+.status-bar__clock {
+  font-size: 0.9rem;
+  color: var(--accent-cyan);
+}
+
+/* SOC Grid Layout */
+.soc-grid {
+  display: grid;
+  grid-template-columns: 320px 1fr 340px;
+  gap: 16px;
+  padding: 16px;
+  min-height: calc(100vh - 60px);
+}
+
+@media (max-width: 1200px) {
+  .soc-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Panels */
+.panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--bg-panel-border);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.panel__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: rgba(0, 0, 0, 0.4);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.panel__title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--text-main);
+}
+
+.panel__bracket {
+  color: var(--accent-green);
+  margin: 0 2px;
+}
+
+.panel__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tag {
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: rgba(0, 255, 170, 0.15);
+  color: var(--accent-green);
+  border: 1px solid rgba(0, 255, 170, 0.3);
+}
+.tag--muted {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-dim);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+.tag--ok {
+  background: rgba(0, 255, 170, 0.1);
+  color: var(--accent-green);
+}
+
+.panel__body {
+  padding: 14px;
+  flex: 1;
+}
+
+.panel__body--chart {
+  height: 160px;
+  position: relative;
+}
+
+.panel__footer {
+  display: flex;
+  justify-content: space-around;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 0.75rem;
+}
+
+.metric-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.metric-row__label {
+  color: var(--text-dim);
+  font-size: 0.65rem;
+}
+
+.metric-row__val {
+  font-weight: 700;
+}
+.metric-row__val--warn { color: var(--accent-yellow); }
+.metric-row__val--ok { color: var(--accent-green); }
+.metric-row__val--danger { color: var(--accent-red); }
+
+/* Anomaly Score Bar */
+.score-meter {
+  margin-bottom: 10px;
+}
+
+.score-meter__bar {
+  height: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  position: relative;
+  overflow: hidden;
+}
+
+.score-meter__fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-yellow), var(--accent-red));
+  width: 10%;
+  transition: width 0.3s ease;
+}
+
+.score-meter__labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  margin-top: 4px;
+}
+
+.score-value {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  justify-content: center;
+}
+
+.score-value__num {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--accent-cyan);
+}
+
+.score-value__label {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
+/* Terminal Log */
+.panel--terminal {
+  flex: 1;
+  min-height: 480px;
+}
+
+.terminal {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  padding: 14px;
+  height: 380px;
+  overflow-y: auto;
+  background: #040609;
+  color: #a0b0c0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.log-line {
+  margin-bottom: 4px;
+  word-break: break-all;
+}
+.log-line--info { color: #a0b0c0; }
+.log-line--warn { color: var(--accent-yellow); }
+.log-line--threat { color: var(--accent-red); font-weight: 700; background: rgba(255, 51, 102, 0.1); padding: 2px 4px; }
+.log-line--lockdown { color: var(--accent-green); font-weight: 700; background: rgba(0, 255, 170, 0.1); padding: 2px 4px; }
+.log-line__ts { color: var(--text-dim); margin-right: 8px; }
+
+.panel__footer--actions {
+  display: flex;
+  gap: 10px;
+  justify-content: stretch;
+  padding: 12px;
+}
+
+.action-btn {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.action-btn--warn {
+  background: rgba(255, 51, 102, 0.15);
+  border-color: var(--accent-red);
+  color: var(--accent-red);
+}
+.action-btn--warn:hover {
+  background: var(--accent-red);
+  color: #fff;
+  box-shadow: 0 0 15px var(--accent-red-glow);
+}
+
+.action-btn--ok {
+  background: rgba(0, 255, 170, 0.15);
+  border-color: var(--accent-green);
+  color: var(--accent-green);
+}
+.action-btn--ok:hover {
+  background: var(--accent-green);
+  color: #000;
+  box-shadow: 0 0 15px var(--accent-green-glow);
+}
+
+.action-btn--dim {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: var(--text-main);
+}
+.action-btn--dim:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.btn-clear {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-dim);
+  font-size: 0.65rem;
+  padding: 2px 6px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+.btn-clear:hover { color: #fff; border-color: #fff; }
+
+/* Right Column Tables & Vault Items */
+.proc-table {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.75rem;
+}
+
+.proc-row {
+  display: grid;
+  grid-template-columns: 50px 1fr 60px 50px;
+  padding: 6px 8px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 4px;
+}
+.proc-row--header {
+  color: var(--text-dim);
+  font-weight: 700;
+  background: transparent;
+}
+.proc-row--threat {
+  background: rgba(255, 51, 102, 0.15);
+  border: 1px solid var(--accent-red);
+  color: var(--accent-red);
+}
+
+.vault-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.05);
+  font-size: 0.75rem;
+}
+.vault-item:last-child { border-bottom: none; }
+.vault-item__label { color: var(--text-dim); }
+.vault-item__val { font-weight: 600; }
+.vault-item__val--ok { color: var(--accent-green); }
+.vault-item__val--hash { font-family: var(--font-mono); font-size: 0.7rem; color: var(--accent-cyan); max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* System Phases */
+.phase-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.phase-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 0.8rem;
+}
+.phase-item--ok {
+  border-color: rgba(0, 255, 170, 0.3);
+  color: var(--accent-green);
+}
+.phase-item--dim {
+  color: var(--text-dim);
+}
+.phase-item--active {
+  border-color: var(--accent-red);
+  background: rgba(255, 51, 102, 0.1);
+  color: var(--accent-red);
+  animation: pulse 1s infinite;
+}
+.phase-item__status {
+  margin-left: auto;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+/* Threat Overlay */
+.threat-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(10px);
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.threat-overlay[hidden] { display: none; }
+
+.threat-box {
+  background: #0d0f17;
+  border: 2px solid var(--accent-red);
+  box-shadow: 0 0 40px var(--accent-red-glow);
+  width: 480px;
+  border-radius: 8px;
+  padding: 24px;
+  text-align: center;
+}
+
+.threat-box__header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  color: var(--accent-red);
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+
+.threat-box__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.threat-box__stat {
+  background: rgba(255, 51, 102, 0.05);
+  border: 1px solid rgba(255, 51, 102, 0.2);
+  padding: 10px;
+  border-radius: 4px;
+}
+.threat-box__stat-label { font-size: 0.65rem; color: var(--text-dim); display: block; margin-bottom: 4px; }
+.threat-box__stat-val { font-size: 1.1rem; font-weight: 700; color: #fff; }
+
+.threat-box__actions {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.threat-btn {
+  flex: 1;
+  padding: 12px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  cursor: pointer;
+}
+.threat-btn--primary {
+  background: var(--accent-red);
+  color: #fff;
+  border: none;
+}
+.threat-btn--secondary {
+  background: transparent;
+  color: var(--text-dim);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.threat-box__progress {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+.threat-box__progress-bar {
+  height: 4px;
+  background: var(--accent-red);
+  width: 100%;
+  margin-bottom: 6px;
+  transition: width 1s linear;
+}
+
+/* Lockdown Flash Banner */
+.lockdown-flash {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 255, 170, 0.95);
+  color: #000;
+  z-index: 2000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  animation: flashIn 0.3s ease-out;
+}
+.lockdown-flash[hidden] { display: none; }
+
+@keyframes flashIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.lockdown-flash__inner {
+  text-align: center;
+  padding: 40px;
+}
+.lockdown-flash__icon { font-size: 4rem; margin-bottom: 12px; }
+.lockdown-flash__title { font-size: 2.2rem; font-weight: 900; letter-spacing: 2px; }
+.lockdown-flash__sub { font-size: 1rem; margin: 12px 0 24px; font-weight: 600; }
+.lockdown-flash__cid, .lockdown-flash__tx { font-family: var(--font-mono); font-size: 0.85rem; margin-bottom: 6px; }
+
+/* TrueForge Agent Panels */
+.panel__body--scrollable {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.tool-call-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tool-call-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 4px;
+  font-size: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.tool-call-item--approval {
+  border-color: var(--accent-yellow);
+  background: rgba(255, 204, 0, 0.1);
+}
+
+.tool-call-item__time {
+  color: var(--text-dim);
+  font-size: 0.65rem;
+}
+
+.tool-call-item__name {
+  color: var(--accent-cyan);
+  font-weight: 600;
+}
+
+.tool-call-item__status {
+  font-weight: 700;
+}
+
+.tool-call-item__status--ok {
+  color: var(--accent-green);
+}
+
+.tool-call-item__status--error {
+  color: var(--accent-red);
+}
+
+.tool-call-item__approval {
+  color: var(--accent-yellow);
+  font-size: 0.65rem;
+  margin-left: auto;
+  animation: pulse 1s infinite;
+}
+
+/* Subagent Panel */
+.subagent-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.subagent-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 4px;
+  font-size: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.subagent-item--active {
+  border-color: var(--accent-cyan);
+  background: rgba(0, 229, 255, 0.1);
+}
+
+.subagent-item__name {
+  color: var(--text-main);
+}
+
+.subagent-item__status {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.subagent-item__status--idle {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-dim);
+}
+
+.subagent-item__status--active {
+  background: rgba(0, 229, 255, 0.2);
+  color: var(--accent-cyan);
+  animation: pulse 1s infinite;
+}
+
+.subagent-item__status--complete {
+  background: rgba(0, 255, 170, 0.2);
+  color: var(--accent-green);
+}
+
+.subagent-item__status--error {
+  background: rgba(255, 51, 102, 0.2);
+  color: var(--accent-red);
+}
+
+/* Approval Panel */
+.approval-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.approval-empty {
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 0.75rem;
+  padding: 12px;
+}
+
+.approval-item {
+  padding: 8px;
+  background: rgba(255, 204, 0, 0.05);
+  border: 1px solid var(--accent-yellow);
+  border-radius: 4px;
+}
+
+.approval-item__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.approval-item__action {
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: var(--accent-yellow);
+}
+
+.approval-item__severity {
+  font-size: 0.65rem;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-weight: 700;
+}
+
+.approval-item__severity--P1 {
+  background: var(--accent-red);
+  color: #fff;
+}
+
+.approval-item__severity--P2 {
+  background: var(--accent-yellow);
+  color: #000;
+}
+
+.approval-item__severity--P3 {
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--text-main);
+}
+
+.approval-item__message {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+
+.approval-item__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.approval-btn {
+  flex: 1;
+  padding: 6px;
+  border: none;
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.approval-btn--approve {
+  background: var(--accent-green);
+  color: #000;
+}
+
+.approval-btn--deny {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-dim);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Thinking Feed */
+.thinking-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.thinking-entry {
+  padding: 6px 8px;
+  background: rgba(0, 229, 255, 0.05);
+  border-left: 2px solid var(--accent-cyan);
+  border-radius: 0 4px 4px 0;
+  font-size: 0.7rem;
+  color: var(--text-dim);
+}
+
+.thinking-entry--reasoning {
+  border-left-color: var(--accent-green);
+  background: rgba(0, 255, 170, 0.05);
+}
+
+.thinking-entry--decision {
+  border-left-color: var(--accent-yellow);
+  background: rgba(255, 204, 0, 0.05);
+}
+
+.thinking-entry--action {
+  border-left-color: var(--accent-red);
+  background: rgba(255, 51, 102, 0.05);
+}
+
+</style>
+</head>
+<body>
+
+  <!-- Scanlines overlay -->
+  <div class="scanlines" aria-hidden="true"></div>
+
+  <!-- Corner decorations -->
+  <div class="corner corner--tl" aria-hidden="true"></div>
+  <div class="corner corner--tr" aria-hidden="true"></div>
+  <div class="corner corner--bl" aria-hidden="true"></div>
+  <div class="corner corner--br" aria-hidden="true"></div>
+
+  <!-- ===== STATUS BAR ===== -->
+  <header class="status-bar" role="banner">
+    <div class="status-bar__brand">
+      <span class="status-bar__logo">◈</span>
+      <span class="status-bar__name">AUTOVAULT</span>
+      <span class="status-bar__ver">SOC v1.0</span>
+    </div>
+
+    <div class="status-bar__center">
+      <div class="status-bar__conn" id="connStatus">
+        <span class="dot dot--warn" id="connDot"></span>
+        <span id="connLabel">DEMO MODE</span>
+      </div>
+    </div>
+
+    <div class="status-bar__right">
+      <div class="threat-badge" id="threatBadge" data-level="NORMAL">
+        <span class="threat-badge__icon">▲</span>
+        <span class="threat-badge__label">THREAT:</span>
+        <span class="threat-badge__level" id="threatLevel">NORMAL</span>
+      </div>
+      <div class="status-bar__clock" id="clock">00:00:00</div>
+    </div>
+  </header>
+
+  <!-- ===== MAIN GRID ===== -->
+  <main class="soc-grid" role="main">
+
+    <!-- ─── LEFT COLUMN: Charts ─── -->
+    <section class="col col--left" aria-label="Telemetry charts">
+
+      <!-- Entropy Chart -->
+      <div class="panel" id="panelEntropy">
+        <div class="panel__header">
+          <div class="panel__title">
+            <span class="panel__bracket">[</span>SHANNON ENTROPY<span class="panel__bracket">]</span>
+          </div>
+          <div class="panel__meta">
+            <span class="tag tag--muted">THRESHOLD: 7.8</span>
+            <span class="tag" id="entropyTag">3.24</span>
+          </div>
+        </div>
+        <div class="panel__body panel__body--chart">
+          <canvas id="entropyChart" role="img" aria-label="Shannon entropy over time"></canvas>
+        </div>
+        <div class="panel__footer">
+          <span class="metric-row">
+            <span class="metric-row__label">CURRENT</span>
+            <span class="metric-row__val" id="entropyCurrent">3.24</span>
+          </span>
+          <span class="metric-row">
+            <span class="metric-row__label">PEAK</span>
+            <span class="metric-row__val metric-row__val--warn" id="entropyPeak">4.12</span>
+          </span>
+          <span class="metric-row">
+            <span class="metric-row__label">STATUS</span>
+            <span class="metric-row__val metric-row__val--ok" id="entropyStatus">NORMAL</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- I/O Velocity Chart -->
+      <div class="panel" id="panelIO">
+        <div class="panel__header">
+          <div class="panel__title">
+            <span class="panel__bracket">[</span>I/O VELOCITY<span class="panel__bracket">]</span>
+          </div>
+          <div class="panel__meta">
+            <span class="tag tag--muted">THRESHOLD: 50/s</span>
+            <span class="tag" id="ioTag">12/s</span>
+          </div>
+        </div>
+        <div class="panel__body panel__body--chart">
+          <canvas id="ioChart" role="img" aria-label="File I/O operations per second"></canvas>
+        </div>
+        <div class="panel__footer">
+          <span class="metric-row">
+            <span class="metric-row__label">WRITES/s</span>
+            <span class="metric-row__val" id="ioCurrent">12</span>
+          </span>
+          <span class="metric-row">
+            <span class="metric-row__label">EXT CHURN</span>
+            <span class="metric-row__val" id="ioChurn">0</span>
+          </span>
+          <span class="metric-row">
+            <span class="metric-row__label">FILES</span>
+            <span class="metric-row__val" id="filesScanned">10</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- Anomaly Score Meter -->
+      <div class="panel panel--score" id="panelScore">
+        <div class="panel__header">
+          <div class="panel__title"><span class="panel__bracket">[</span>AI ANOMALY SCORE<span class="panel__bracket">]</span></div>
+          <span class="tag tag--muted">Isolation Forest</span>
+        </div>
+        <div class="panel__body">
+          <div class="score-meter">
+            <div class="score-meter__bar">
+              <div class="score-meter__fill" id="scoreFill" style="width:8%"></div>
+              <div class="score-meter__threshold"></div>
+            </div>
+            <div class="score-meter__labels">
+              <span>SAFE</span><span>ELEVATED</span><span>CRITICAL</span>
+            </div>
+          </div>
+          <div class="score-value">
+            <span class="score-value__num" id="scoreNum">0.08</span>
+            <span class="score-value__label">confidence</span>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ─── CENTER: Terminal Log ─── -->
+    <section class="col col--center" aria-label="Live event log">
+      <div class="panel panel--terminal">
+        <div class="panel__header">
+          <div class="panel__title">
+            <span class="panel__bracket">[</span>LIVE THREAT FEED<span class="panel__bracket">]</span>
+          </div>
+          <div class="panel__meta">
+            <span class="dot dot--ok is-pulse"></span>
+            <span class="tag tag--muted" id="logCount">0 events</span>
+            <button class="btn-clear" id="clearLogBtn" title="Clear log">CLR</button>
+          </div>
+        </div>
+        <div class="terminal" id="terminal" role="log" aria-live="polite" aria-label="Security event log"></div>
+        <div class="panel__footer panel__footer--actions">
+          <button class="action-btn action-btn--warn" id="simAttackBtn">
+            <i class="fa-solid fa-biohazard"></i> SIMULATE ATTACK
+          </button>
+          <button class="action-btn action-btn--ok" id="resetBtn">
+            <i class="fa-solid fa-rotate"></i> RESET SYSTEM
+          </button>
+          <button class="action-btn action-btn--dim" id="snapshotBtn">
+            <i class="fa-solid fa-database"></i> MANUAL SNAPSHOT
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── RIGHT COLUMN: Status panels ─── -->
+    <section class="col col--right" aria-label="System status">
+
+      <!-- Process Monitor -->
+      <div class="panel" id="panelProcess">
+        <div class="panel__header">
+          <div class="panel__title"><span class="panel__bracket">[</span>PROCESS MONITOR<span class="panel__bracket">]</span></div>
+          <span class="tag tag--muted" id="procCount">1 active</span>
+        </div>
+        <div class="panel__body">
+          <div class="proc-table" id="processTable">
+            <div class="proc-row proc-row--header">
+              <span>PID</span><span>PROCESS</span><span>ENTROPY</span><span>RISK</span>
+            </div>
+            <!-- Dynamic rows injected by JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Blockchain Vault -->
+      <div class="panel" id="panelVault">
+        <div class="panel__header">
+          <div class="panel__title"><span class="panel__bracket">[</span>BLOCKCHAIN VAULT<span class="panel__bracket">]</span></div>
+          <span class="tag" id="vaultNet">DEMO NET</span>
+        </div>
+        <div class="panel__body">
+          <div class="vault-item">
+            <span class="vault-item__label">NETWORK</span>
+            <span class="vault-item__val vault-item__val--ok" id="vaultNetwork">Polygon Amoy</span>
+          </div>
+          <div class="vault-item">
+            <span class="vault-item__label">CONTRACT</span>
+            <span class="vault-item__val vault-item__val--hash" id="vaultContract">0xDemo...Vault</span>
+          </div>
+          <div class="vault-item">
+            <span class="vault-item__label">LATEST CID</span>
+            <span class="vault-item__val vault-item__val--hash" id="vaultCID">Awaiting snapshot...</span>
+          </div>
+          <div class="vault-item">
+            <span class="vault-item__label">LAST TX</span>
+            <span class="vault-item__val vault-item__val--hash" id="vaultTX">—</span>
+          </div>
+          <div class="vault-item">
+            <span class="vault-item__label">SNAPSHOTS</span>
+            <span class="vault-item__val" id="vaultSnaps">0</span>
+          </div>
+          <div class="vault-item">
+            <span class="vault-item__label">INTEGRITY</span>
+            <span class="vault-item__val vault-item__val--ok" id="vaultInteg">✓ VERIFIED</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Brain Status -->
+      <div class="panel" id="panelBrain">
+        <div class="panel__header">
+          <div class="panel__title"><span class="panel__bracket">[</span>AI BRAIN<span class="panel__bracket">]</span></div>
+          <span class="tag tag--ok">ONLINE</span>
+        </div>
+        <div class="panel__body">
+          <div class="vault-item">
+            <span class="vault-item__label">MODEL</span>
+            <span class="vault-item__val vault-item__val--ok">Isolation Forest</span>
+          </div>
+          <div class="vault-item">
+            <span class="vault-item__label">ESTIMATORS</span>
+            <span class="vault-item__val">100</span>
+          </div>
+          <div class="vault-item">
+            <span class="vault-item__label">FEATURES</span>
+            <span class="vault-item__val">Entropy, I/O, Churn</span>
+          </div>
+          <div class="vault-item">
+            <span class="vault-item__label">CONTAMINATION</span>
+            <span class="vault-item__val">5%</span>
+          </div>
+          <div class="vault-item">
+            <span class="vault-item__label">DECISIONS</span>
+            <span class="vault-item__val" id="brainDecisions">0</span>
+          </div>
+          <div class="vault-item">
+            <span class="vault-item__label">LAST ACTION</span>
+            <span class="vault-item__val" id="brainLastAction">Monitoring</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- TrueForge Agent Status -->
+      <div class="panel" id="panelTrueForge">
+        <div class="panel__header">
+          <div class="panel__title"><span class="panel__bracket">[</span>TRUEFORGE AGENT<span class="panel__bracket">]</span></div>
+          <span class="tag" id="trueforgeStatus">OFFLINE</span>
+        </div>
+        <div class="panel__body">
+          <div class="vault-item">
+            <span class="vault-item__label">HARNESS</span>
+            <span class="vault-item__val vault-item__val--ok" id="trueforgeHarness">TrueForge v1.0</span>
+          </div>
+          <div class="vault-item">
+            <span class="vault-item__label">MODEL</span>
+            <span class="vault-item__val" id="trueforgeModel">GPT-4o</span>
+          </div>
+          <div class="vault-item">
+            <span class="vault-item__label">SESSION</span>
+            <span class="vault-item__val" id="trueforgeSession">—</span>
+          </div>
+          <div class="vault-item">
+            <span class="vault-item__label">TOOL CALLS</span>
+            <span class="vault-item__val" id="trueforgeToolCalls">0</span>
+          </div>
+          <div class="vault-item">
+            <span class="vault-item__label">APPROVALS</span>
+            <span class="vault-item__val" id="trueforgeApprovals">0</span>
+          </div>
+          <div class="vault-item">
+            <span class="vault-item__label">SANDBOX</span>
+            <span class="vault-item__val" id="trueforgeSandbox">Ready</span>
+          </div>
+          <div class="vault-item">
+            <span class="vault-item__label">LAST ACTION</span>
+            <span class="vault-item__val" id="trueforgeLastAction">—</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tool Call Feed -->
+      <div class="panel" id="panelToolCalls">
+        <div class="panel__header">
+          <div class="panel__title"><span class="panel__bracket">[</span>AGENT TOOL CALLS<span class="panel__bracket">]</span></div>
+          <span class="tag tag--muted" id="toolCallCount">0 calls</span>
+        </div>
+        <div class="panel__body panel__body--scrollable">
+          <div class="tool-call-list" id="toolCallList">
+            <!-- Dynamic tool calls injected by JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Subagent Status -->
+      <div class="panel" id="panelSubagents">
+        <div class="panel__header">
+          <div class="panel__title"><span class="panel__bracket">[</span>SUBAGENTS<span class="panel__bracket">]</span></div>
+          <span class="tag tag--muted" id="subagentCount">0/5 active</span>
+        </div>
+        <div class="panel__body panel__body--scrollable">
+          <div class="subagent-list" id="subagentList">
+            <div class="subagent-item" data-agent="process-investigator">
+              <span class="subagent-item__name">Process Investigator</span>
+              <span class="subagent-item__status subagent-item__status--idle">IDLE</span>
+            </div>
+            <div class="subagent-item" data-agent="network-analyzer">
+              <span class="subagent-item__name">Network Analyzer</span>
+              <span class="subagent-item__status subagent-item__status--idle">IDLE</span>
+            </div>
+            <div class="subagent-item" data-agent="forensics-analyst">
+              <span class="subagent-item__name">Forensics Analyst</span>
+              <span class="subagent-item__status subagent-item__status--idle">IDLE</span>
+            </div>
+            <div class="subagent-item" data-agent="threat-hunter">
+              <span class="subagent-item__name">Threat Hunter</span>
+              <span class="subagent-item__status subagent-item__status--idle">IDLE</span>
+            </div>
+            <div class="subagent-item" data-agent="incident-responder">
+              <span class="subagent-item__name">Incident Responder</span>
+              <span class="subagent-item__status subagent-item__status--idle">IDLE</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Approval Queue -->
+      <div class="panel" id="panelApprovals">
+        <div class="panel__header">
+          <div class="panel__title"><span class="panel__bracket">[</span>APPROVAL QUEUE<span class="panel__bracket">]</span></div>
+          <span class="tag tag--muted" id="approvalCount">0 pending</span>
+        </div>
+        <div class="panel__body panel__body--scrollable">
+          <div class="approval-list" id="approvalList">
+            <div class="approval-empty">No pending approvals</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Agent Thinking -->
+      <div class="panel" id="panelThinking">
+        <div class="panel__header">
+          <div class="panel__title"><span class="panel__bracket">[</span>AGENT REASONING<span class="panel__bracket">]</span></div>
+          <span class="dot dot--ok is-pulse" id="thinkingDot"></span>
+        </div>
+        <div class="panel__body panel__body--scrollable">
+          <div class="thinking-feed" id="thinkingFeed">
+            <div class="thinking-entry">Agent initializing...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- System Phases -->
+      <div class="panel panel--phases" id="panelPhases">
+        <div class="panel__header">
+          <div class="panel__title"><span class="panel__bracket">[</span>SYSTEM PHASES<span class="panel__bracket">]</span></div>
+        </div>
+        <div class="panel__body">
+          <div class="phase-list">
+            <div class="phase-item phase-item--ok" id="phaseWatchdog">
+              <span class="phase-item__icon">◈</span>
+              <span class="phase-item__name">WATCHDOG</span>
+              <span class="phase-item__status">ACTIVE</span>
+            </div>
+            <div class="phase-item phase-item--ok" id="phaseBrain">
+              <span class="phase-item__icon">◈</span>
+              <span class="phase-item__name">BRAIN (AI)</span>
+              <span class="phase-item__status">ANALYZING</span>
+            </div>
+            <div class="phase-item phase-item--dim" id="phaseEnforcer">
+              <span class="phase-item__icon">◈</span>
+              <span class="phase-item__name">ENFORCER</span>
+              <span class="phase-item__status">STANDBY</span>
+            </div>
+            <div class="phase-item phase-item--dim" id="phaseVault">
+              <span class="phase-item__icon">◈</span>
+              <span class="phase-item__name">VAULT</span>
+              <span class="phase-item__status">IDLE</span>
+            </div>
+            <div class="phase-item phase-item--ok" id="phaseTrueForge">
+              <span class="phase-item__icon">◈</span>
+              <span class="phase-item__name">TRUEFORGE</span>
+              <span class="phase-item__status">STANDBY</span>
+            </div>
+            <div class="phase-item phase-item--dim" id="phaseSandbox">
+              <span class="phase-item__icon">◈</span>
+              <span class="phase-item__name">SANDBOX</span>
+              <span class="phase-item__status">READY</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- ===== THREAT ALERT OVERLAY ===== -->
+  <div class="threat-overlay" id="threatOverlay" hidden aria-modal="true" role="alertdialog" aria-label="Threat detected">
+    <div class="threat-box">
+      <div class="threat-box__header">
+        <span class="threat-box__icon">⚠</span>
+        <span class="threat-box__title">RANSOMWARE DETECTED</span>
+        <span class="threat-box__icon">⚠</span>
+      </div>
+      <div class="threat-box__grid">
+        <div class="threat-box__stat">
+          <span class="threat-box__stat-label">ENTROPY</span>
+          <span class="threat-box__stat-val" id="alertEntropy">7.92</span>
+        </div>
+        <div class="threat-box__stat">
+          <span class="threat-box__stat-label">I/O VELOCITY</span>
+          <span class="threat-box__stat-val" id="alertIO">284/s</span>
+        </div>
+        <div class="threat-box__stat">
+          <span class="threat-box__stat-label">PROCESS</span>
+          <span class="threat-box__stat-val" id="alertProcess">unknown.exe</span>
+        </div>
+        <div class="threat-box__stat">
+          <span class="threat-box__stat-label">PID</span>
+          <span class="threat-box__stat-val" id="alertPID">—</span>
+        </div>
+      </div>
+      <div class="threat-box__actions">
+        <button class="threat-btn threat-btn--primary" id="lockdownBtn">
+          <i class="fa-solid fa-lock"></i> TRIGGER LOCKDOWN
+        </button>
+        <button class="threat-btn threat-btn--secondary" id="dismissBtn">
+          DISMISS
+        </button>
+      </div>
+      <div class="threat-box__progress" id="autoLockProgress">
+        <div class="threat-box__progress-bar" id="autoLockBar"></div>
+        <span class="threat-box__progress-label">Auto-lockdown in <span id="autoLockCountdown">10</span>s</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== LOCKDOWN FLASH ===== -->
+  <div class="lockdown-flash" id="lockdownFlash" hidden aria-hidden="true">
+    <div class="lockdown-flash__inner">
+      <div class="lockdown-flash__icon">🔒</div>
+      <div class="lockdown-flash__title">LOCKDOWN ENFORCED</div>
+      <div class="lockdown-flash__sub" id="lockdownSub">Process suspended · Network isolated · Vault secured</div>
+      <div class="lockdown-flash__cid">IPFS CID: <span id="lockdownCID">—</span></div>
+      <div class="lockdown-flash__tx">TX: <span id="lockdownTX">—</span></div>
+    </div>
+  </div>
+
+  <script>
+/* =============================================
+   AUTOVAULT SOC DASHBOARD INTERACTIVE JS
+   ============================================= */
+
+(function () {
+  "use strict";
+
+  // --- Clock ---
+  function updateClock() {
+    const now = new Date();
+    const clockEl = document.getElementById("clock");
+    if (clockEl) {
+      clockEl.textContent = now.toTimeString().split(" ")[0] + "." + String(now.getMilliseconds()).padStart(3, "0");
+    }
+  }
+  setInterval(updateClock, 50);
+
+  // --- Charts Initialization ---
+  const MAX_DATA_POINTS = 30;
+  const labels = Array.from({ length: MAX_DATA_POINTS }, (_, i) => `${MAX_DATA_POINTS - i}s ago`);
+  const initialEntropyData = Array.from({ length: MAX_DATA_POINTS }, () => 3.0 + Math.random() * 0.8);
+  const initialIOData = Array.from({ length: MAX_DATA_POINTS }, () => Math.floor(5 + Math.random() * 10));
+
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: false,
+    scales: {
+      x: { display: false },
+      y: {
+        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+        ticks: { color: '#7a889b', font: { family: 'JetBrains Mono', size: 10 } }
+      }
+    },
+    plugins: { legend: { display: false } }
+  };
+
+  // 1. Entropy Chart
+  const ctxEntropy = document.getElementById("entropyChart").getContext("2d");
+  const entropyChart = new Chart(ctxEntropy, {
+    type: "line",
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: "Entropy",
+          data: initialEntropyData,
+          borderColor: "#00ffaa",
+          borderWidth: 2,
+          pointRadius: 0,
+          tension: 0.2,
+          fill: true,
+          backgroundColor: "rgba(0, 255, 170, 0.05)"
+        },
+        {
+          label: "Threshold",
+          data: Array(MAX_DATA_POINTS).fill(7.8),
+          borderColor: "rgba(255, 51, 102, 0.5)",
+          borderWidth: 1,
+          borderDash: [4, 4],
+          pointRadius: 0
+        }
+      ]
+    },
+    options: {
+      ...chartOptions,
+      scales: {
+        ...chartOptions.scales,
+        y: { ...chartOptions.scales.y, min: 0, max: 8.5 }
+      }
+    }
+  });
+
+  // 2. I/O Velocity Chart
+  const ctxIO = document.getElementById("ioChart").getContext("2d");
+  const ioChart = new Chart(ctxIO, {
+    type: "line",
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: "I/O Velocity",
+          data: initialIOData,
+          borderColor: "#00e5ff",
+          borderWidth: 2,
+          pointRadius: 0,
+          tension: 0.2,
+          fill: true,
+          backgroundColor: "rgba(0, 229, 255, 0.05)"
+        },
+        {
+          label: "Threshold",
+          data: Array(MAX_DATA_POINTS).fill(50),
+          borderColor: "rgba(255, 51, 102, 0.5)",
+          borderWidth: 1,
+          borderDash: [4, 4],
+          pointRadius: 0
+        }
+      ]
+    },
+    options: {
+      ...chartOptions,
+      scales: {
+        ...chartOptions.scales,
+        y: { ...chartOptions.scales.y, min: 0, max: 300 }
+      }
+    }
+  });
+
+  // --- Terminal Log Helper ---
+  const terminal = document.getElementById("terminal");
+  const logCountEl = document.getElementById("logCount");
+  let eventCounter = 0;
+
+  function appendLog(msg, level = "info") {
+    if (!terminal) return;
+    const timeStr = new Date().toTimeString().split(" ")[0];
+    const div = document.createElement("div");
+    div.className = `log-line log-line--${level}`;
+    div.innerHTML = `<span class="log-line__ts">[${timeStr}]</span> ${msg}`;
+    terminal.appendChild(div);
+    terminal.scrollTop = terminal.scrollHeight;
+    eventCounter++;
+    if (logCountEl) logCountEl.textContent = `${eventCounter} events`;
+  }
+
+  document.getElementById("clearLogBtn")?.addEventListener("click", () => {
+    if (terminal) terminal.innerHTML = "";
+    eventCounter = 0;
+    if (logCountEl) logCountEl.textContent = "0 events";
+  });
+
+  appendLog("AutoVault Security Operations Center initialized.", "info");
+  appendLog("Connecting to local Cyber Agent daemon on ws://localhost:8765...", "info");
+
+  // --- WebSocket Connection ---
+  let ws = null;
+  let isConnected = false;
+  let simInterval = null;
+
+  function connectWS() {
+    try {
+      ws = new WebSocket("ws://localhost:8765");
+
+      ws.onopen = () => {
+        isConnected = true;
+        document.getElementById("connDot").className = "dot dot--ok";
+        document.getElementById("connLabel").textContent = "AGENT ONLINE";
+        appendLog("Connected to Cyber Agent daemon.", "info");
+        if (simInterval) clearInterval(simInterval);
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          handleAgentMessage(data);
+        } catch (e) {
+          console.error("Failed to parse WS msg", e);
+        }
+      };
+
+      ws.onclose = () => {
+        isConnected = false;
+        document.getElementById("connDot").className = "dot dot--warn";
+        document.getElementById("connLabel").textContent = "SIMULATION MODE";
+        appendLog("Disconnected from Agent. Falling back to local simulation mode.", "warn");
+        startLocalSimulation();
+        setTimeout(connectWS, 3000);
+      };
+
+      ws.onerror = () => {
+        ws.close();
+      };
+    } catch (e) {
+      startLocalSimulation();
+    }
+  }
+
+  connectWS();
+
+  // --- UI Update Handler ---
+  let peakEntropy = 4.12;
+
+  function updateTelemetryUI(entropy, ioVelocity, churn, threatLevel, anomalyScore, processName = "chrome.exe", pid = 1042) {
+    // 1. Update Entropy Chart & Texts
+    entropyChart.data.datasets[0].data.shift();
+    entropyChart.data.datasets[0].data.push(entropy);
+    entropyChart.update();
+
+    if (entropy > peakEntropy) peakEntropy = entropy;
+    document.getElementById("entropyTag").textContent = entropy.toFixed(2);
+    document.getElementById("entropyCurrent").textContent = entropy.toFixed(2);
+    document.getElementById("entropyPeak").textContent = peakEntropy.toFixed(2);
+    document.getElementById("entropyStatus").textContent = entropy > 7.8 ? "CRITICAL" : "NORMAL";
+    document.getElementById("entropyStatus").className = `metric-row__val metric-row__val--${entropy > 7.8 ? "danger" : "ok"}`;
+
+    // 2. Update I/O Chart & Texts
+    ioChart.data.datasets[0].data.shift();
+    ioChart.data.datasets[0].data.push(ioVelocity);
+    ioChart.update();
+
+    document.getElementById("ioTag").textContent = `${ioVelocity}/s`;
+    document.getElementById("ioCurrent").textContent = ioVelocity;
+    document.getElementById("ioChurn").textContent = churn;
+
+    // 3. Anomaly Score Fill
+    const fillPercent = Math.min(100, Math.max(5, Math.abs(anomalyScore) * 100));
+    document.getElementById("scoreFill").style.width = `${fillPercent}%`;
+    document.getElementById("scoreNum").textContent = Math.abs(anomalyScore).toFixed(2);
+
+    // 4. Threat Badge
+    const badge = document.getElementById("threatBadge");
+    const levelEl = document.getElementById("threatLevel");
+    badge.setAttribute("data-level", threatLevel);
+    levelEl.textContent = threatLevel;
+
+    // 5. Process Table Update
+    const procTable = document.getElementById("processTable");
+    if (procTable) {
+      procTable.innerHTML = `
+        <div class="proc-row proc-row--header">
+          <span>PID</span><span>PROCESS</span><span>ENTROPY</span><span>RISK</span>
+        </div>
+        <div class="proc-row ${threatLevel === "CRITICAL" || threatLevel === "HIGH" ? "proc-row--threat" : ""}">
+          <span>${pid}</span>
+          <span>${processName}</span>
+          <span>${entropy.toFixed(2)}</span>
+          <span>${threatLevel}</span>
+        </div>
+        <div class="proc-row">
+          <span>894</span>
+          <span>svchost.exe</span>
+          <span>3.12</span>
+          <span>SAFE</span>
+        </div>
+        <div class="proc-row">
+          <span>2140</span>
+          <span>python.exe</span>
+          <span>3.84</span>
+          <span>SAFE</span>
+        </div>
+      `;
+    }
+  }
+
+  function handleAgentMessage(data) {
+    if (data.type === "telemetry") {
+      updateTelemetryUI(data.entropy, data.io_velocity, data.extension_churn, data.threat_level, data.anomaly_score, data.active_process, data.pid);
+      if (data.files_scanned) {
+        document.getElementById("filesScanned").textContent = data.files_scanned;
+      }
+    } else if (data.type === "log") {
+      appendLog(data.message, data.level ? data.level.toLowerCase() : "info");
+    } else if (data.type === "threat") {
+      triggerThreatAlert(data.entropy, data.io_velocity, data.process, data.pid);
+    } else if (data.type === "lockdown") {
+      showLockdownFlash(data.cid, data.tx_hash);
+    } else if (data.type === "vault") {
+      document.getElementById("vaultCID").textContent = data.cid || "QmVault...";
+      document.getElementById("vaultTX").textContent = data.tx_hash || "0x9f3...";
+      const countEl = document.getElementById("vaultSnaps");
+      if (countEl) countEl.textContent = parseInt(countEl.textContent || "0") + 1;
+    } else if (data.type === "trueforge") {
+      handleTrueForgeMessage(data);
+    } else if (data.type === "tool_call") {
+      handleToolCall(data);
+    } else if (data.type === "subagent") {
+      handleSubagentMessage(data);
+    } else if (data.type === "approval") {
+      handleApprovalMessage(data);
+    } else if (data.type === "thinking") {
+      handleThinkingMessage(data);
+    }
+  }
+
+  // --- TrueForge Agent Status ---
+  let trueforgeToolCallCount = 0;
+  let trueforgeApprovalCount = 0;
+
+  function handleTrueForgeMessage(data) {
+    const statusEl = document.getElementById("trueforgeStatus");
+    const harnessEl = document.getElementById("trueforgeHarness");
+    const modelEl = document.getElementById("trueforgeModel");
+    const sessionEl = document.getElementById("trueforgeSession");
+    const toolCallsEl = document.getElementById("trueforgeToolCalls");
+    const approvalsEl = document.getElementById("trueforgeApprovals");
+    const sandboxEl = document.getElementById("trueforgeSandbox");
+    const lastActionEl = document.getElementById("trueforgeLastAction");
+
+    if (data.status) {
+      statusEl.textContent = data.status;
+      statusEl.className = `tag ${data.status === "ONLINE" ? "tag--ok" : "tag--warn"}`;
+    }
+    if (data.harness) harnessEl.textContent = data.harness;
+    if (data.model) modelEl.textContent = data.model;
+    if (data.session_id) sessionEl.textContent = data.session_id.substring(0, 8) + "...";
+    if (data.tool_calls) toolCallsEl.textContent = data.tool_calls;
+    if (data.approvals) approvalsEl.textContent = data.approvals;
+    if (data.sandbox) sandboxEl.textContent = data.sandbox;
+    if (data.last_action) lastActionEl.textContent = data.last_action;
+
+    // Update TrueForge phase
+    const phaseEl = document.getElementById("phaseTrueForge");
+    if (phaseEl) {
+      if (data.status === "ONLINE") {
+        phaseEl.className = "phase-item phase-item--ok";
+        phaseEl.querySelector(".phase-item__status").textContent = "ACTIVE";
+      } else {
+        phaseEl.className = "phase-item phase-item--dim";
+        phaseEl.querySelector(".phase-item__status").textContent = "STANDBY";
+      }
+    }
+  }
+
+  function handleToolCall(data) {
+    trueforgeToolCallCount++;
+    document.getElementById("trueforgeToolCalls").textContent = trueforgeToolCallCount;
+    document.getElementById("toolCallCount").textContent = `${trueforgeToolCallCount} calls`;
+
+    // Add to tool call list
+    const toolCallList = document.getElementById("toolCallList");
+    if (toolCallList) {
+      const div = document.createElement("div");
+      div.className = `tool-call-item ${data.approval_required ? "tool-call-item--approval" : ""}`;
+      div.innerHTML = `
+        <span class="tool-call-item__time">${new Date().toTimeString().split(" ")[0]}</span>
+        <span class="tool-call-item__name">${data.tool_name}</span>
+        <span class="tool-call-item__status ${data.success ? "tool-call-item__status--ok" : "tool-call-item__status--error"}">
+          ${data.success ? "✓" : "✗"}
+        </span>
+        ${data.approval_required ? "<span class="tool-call-item__approval">⏳ PENDING</span>" : ""}
+      `;
+      toolCallList.insertBefore(div, toolCallList.firstChild);
+
+      // Keep only last 10 items
+      while (toolCallList.children.length > 10) {
+        toolCallList.removeChild(toolCallList.lastChild);
+      }
+    }
+
+    // Track approvals
+    if (data.approval_required) {
+      trueforgeApprovalCount++;
+      document.getElementById("trueforgeApprovals").textContent = trueforgeApprovalCount;
+    }
+
+    // Log the tool call
+    const logMsg = data.approval_required 
+      ? `[AGENT] Tool: ${data.tool_name} — REQUIRES APPROVAL`
+      : `[AGENT] Tool: ${data.tool_name} — ${data.success ? "Success" : "Failed"}`;
+    appendLog(logMsg, data.approval_required ? "warn" : "info");
+  }
+
+  // --- Subagent Status ---
+  function updateSubagentStatus(agentName, status) {
+    const subagentList = document.getElementById("subagentList");
+    if (!subagentList) return;
+
+    const agentEl = subagentList.querySelector(`[data-agent="${agentName}"]`);
+    if (agentEl) {
+      const statusEl = agentEl.querySelector(".subagent-item__status");
+      if (statusEl) {
+        statusEl.textContent = status.toUpperCase();
+        statusEl.className = `subagent-item__status subagent-item__status--${status.toLowerCase()}`;
+      }
+      agentEl.className = `subagent-item ${status === "active" ? "subagent-item--active" : ""}`;
+    }
+
+    // Update count
+    const activeAgents = subagentList.querySelectorAll(".subagent-item--active").length;
+    document.getElementById("subagentCount").textContent = `${activeAgents}/5 active`;
+  }
+
+  // --- Approval Queue ---
+  function addApprovalRequest(data) {
+    const approvalList = document.getElementById("approvalList");
+    if (!approvalList) return;
+
+    // Remove empty message
+    const emptyMsg = approvalList.querySelector(".approval-empty");
+    if (emptyMsg) emptyMsg.remove();
+
+    const div = document.createElement("div");
+    div.className = "approval-item";
+    div.innerHTML = `
+      <div class="approval-item__header">
+        <span class="approval-item__action">${data.action}</span>
+        <span class="approval-item__severity approval-item__severity--${data.severity}">${data.severity}</span>
+      </div>
+      <div class="approval-item__message">${data.message}</div>
+      <div class="approval-item__actions">
+        <button class="approval-btn approval-btn--approve" onclick="approveAction('${data.id}')">APPROVE</button>
+        <button class="approval-btn approval-btn--deny" onclick="denyAction('${data.id}')">DENY</button>
+      </div>
+    `;
+
+    approvalList.insertBefore(div, approvalList.firstChild);
+
+    // Update count
+    const pendingCount = approvalList.querySelectorAll(".approval-item").length;
+    document.getElementById("approvalCount").textContent = `${pendingCount} pending`;
+
+    // Add thinking entry
+    addThinkingEntry(`Approval requested: ${data.action}`, "decision");
+  }
+
+  // --- Agent Thinking Feed ---
+  function addThinkingEntry(message, type = "info") {
+    const thinkingFeed = document.getElementById("thinkingFeed");
+    if (!thinkingFeed) return;
+
+    const div = document.createElement("div");
+    div.className = `thinking-entry thinking-entry--${type}`;
+    div.textContent = message;
+    thinkingFeed.insertBefore(div, thinkingFeed.firstChild);
+
+    // Keep only last 8 items
+    while (thinkingFeed.children.length > 8) {
+      thinkingFeed.removeChild(thinkingFeed.lastChild);
+    }
+  }
+
+  // --- Handle TrueForge Messages ---
+  function handleTrueForgeMessage(data) {
+    const statusEl = document.getElementById("trueforgeStatus");
+    const harnessEl = document.getElementById("trueforgeHarness");
+    const modelEl = document.getElementById("trueforgeModel");
+    const sessionEl = document.getElementById("trueforgeSession");
+    const toolCallsEl = document.getElementById("trueforgeToolCalls");
+    const approvalsEl = document.getElementById("trueforgeApprovals");
+    const sandboxEl = document.getElementById("trueforgeSandbox");
+    const lastActionEl = document.getElementById("trueforgeLastAction");
+
+    if (data.status) {
+      statusEl.textContent = data.status;
+      statusEl.className = `tag ${data.status === "ONLINE" ? "tag--ok" : "tag--warn"}`;
+    }
+    if (data.harness) harnessEl.textContent = data.harness;
+    if (data.model) modelEl.textContent = data.model;
+    if (data.session_id) sessionEl.textContent = data.session_id.substring(0, 8) + "...";
+    if (data.tool_calls) toolCallsEl.textContent = data.tool_calls;
+    if (data.approvals) approvalsEl.textContent = data.approvals;
+    if (data.sandbox) sandboxEl.textContent = data.sandbox;
+    if (data.last_action) lastActionEl.textContent = data.last_action;
+
+    // Update TrueForge phase
+    const phaseEl = document.getElementById("phaseTrueForge");
+    if (phaseEl) {
+      if (data.status === "ONLINE") {
+        phaseEl.className = "phase-item phase-item--ok";
+        phaseEl.querySelector(".phase-item__status").textContent = "ACTIVE";
+      } else {
+        phaseEl.className = "phase-item phase-item--dim";
+        phaseEl.querySelector(".phase-item__status").textContent = "STANDBY";
+      }
+    }
+  }
+
+  // --- Handle Subagent Messages ---
+  function handleSubagentMessage(data) {
+    updateSubagentStatus(data.agent_name, data.status);
+    
+    if (data.status === "active") {
+      addThinkingEntry(`Subagent ${data.agent_name} started: ${data.task}`, "info");
+    } else if (data.status === "complete") {
+      addThinkingEntry(`Subagent ${data.agent_name} completed: ${data.result}", "reasoning");
+    } else if (data.status === "error") {
+      addThinkingEntry(`Subagent ${data.agent_name} error: ${data.error}", "action");
+    }
+  }
+
+  // --- Handle Approval Messages ---
+  function handleApprovalMessage(data) {
+    if (data.type === "request") {
+      addApprovalRequest(data);
+    } else if (data.type === "approved") {
+      addThinkingEntry(`Approved: ${data.action}`, "reasoning");
+      // Remove from queue
+      const approvalList = document.getElementById("approvalList");
+      if (approvalList) {
+        const items = approvalList.querySelectorAll(".approval-item");
+        items.forEach(item => {
+          if (item.querySelector(".approval-item__action").textContent === data.action) {
+            item.remove();
+          }
+        });
+        const pendingCount = approvalList.querySelectorAll(".approval-item").length;
+        document.getElementById("approvalCount").textContent = `${pendingCount} pending`;
+      }
+    } else if (data.type === "denied") {
+      addThinkingEntry(`Denied: ${data.action}", "action");
+    }
+  }
+
+  // --- Handle Thinking Messages ---
+  function handleThinkingMessage(data) {
+    addThinkingEntry(data.message, data.type || "info");
+  }
+
+  // Global functions for approval buttons
+  window.approveAction = function(actionId) {
+    if (isConnected && ws) {
+      ws.send(JSON.stringify({ action: "approve", action_id: actionId }));
+    }
+    addThinkingEntry(`User approved action: ${actionId}", "reasoning");
+  };
+
+  window.denyAction = function(actionId) {
+    if (isConnected && ws) {
+      ws.send(JSON.stringify({ action: "deny", action_id: actionId }));
+    }
+    addThinkingEntry(`User denied action: ${actionId}", "action");
+  };
+
+  // --- Threat Alert & Lockdown Handling ---
+  const threatOverlay = document.getElementById("threatOverlay");
+  const lockdownFlash = document.getElementById("lockdownFlash");
+  let autoLockTimer = null;
+
+  function triggerThreatAlert(entropy, ioVelocity, processName, pid) {
+    document.getElementById("alertEntropy").textContent = entropy.toFixed(2);
+    document.getElementById("alertIO").textContent = `${ioVelocity}/s`;
+    document.getElementById("alertProcess").textContent = processName;
+    document.getElementById("alertPID").textContent = pid;
+
+    threatOverlay.removeAttribute("hidden");
+    appendLog(`[ALERT] High-entropy process anomaly detected! PID ${pid} (${processName})`, "threat");
+
+    // Auto lockdown countdown
+    let left = 10;
+    const countEl = document.getElementById("autoLockCountdown");
+    const barEl = document.getElementById("autoLockBar");
+    barEl.style.width = "100%";
+
+    if (autoLockTimer) clearInterval(autoLockTimer);
+    autoLockTimer = setInterval(() => {
+      left--;
+      if (countEl) countEl.textContent = left;
+      barEl.style.width = `${(left / 10) * 100}%`;
+      if (left <= 0) {
+        clearInterval(autoLockTimer);
+        executeLockdownAction();
+      }
+    }, 1000);
+  }
+
+  function executeLockdownAction() {
+    if (autoLockTimer) clearInterval(autoLockTimer);
+    threatOverlay.setAttribute("hidden", "");
+
+    // Send lockdown to WS agent if connected
+    if (isConnected && ws) {
+      ws.send(JSON.stringify({ action: "lockdown" }));
+    } else {
+      // Local fallback simulation lockdown
+      const fakeCID = "QmXyZ9876543210" + Math.random().toString(36).substring(2, 8);
+      const fakeTX = "0x" + Array.from({length: 40}, () => Math.floor(Math.random()*16).toString(16)).join("");
+      showLockdownFlash(fakeCID, fakeTX);
+    }
+  }
+
+  function showLockdownFlash(cid, tx) {
+    document.getElementById("lockdownCID").textContent = cid;
+    document.getElementById("lockdownTX").textContent = tx;
+    lockdownFlash.removeAttribute("hidden");
+
+    document.getElementById("phaseEnforcer").className = "phase-item phase-item--active";
+    document.getElementById("phaseEnforcer").querySelector(".phase-item__status").textContent = "SUSPENDED PID";
+    document.getElementById("phaseVault").className = "phase-item phase-item--ok";
+    document.getElementById("phaseVault").querySelector(".phase-item__status").textContent = "SNAPSHOTTED";
+
+    appendLog(`[ENFORCER] Malicious process suspended. Network blocked. Clean state backed up to IPFS: ${cid}`, "lockdown");
+    appendLog(`[VAULT] Smart Contract triggered on Polygon Amoy. Tx Hash: ${tx}`, "lockdown");
+
+    setTimeout(() => {
+      lockdownFlash.setAttribute("hidden", "");
+    }, 4000);
+  }
+
+  document.getElementById("lockdownBtn")?.addEventListener("click", executeLockdownAction);
+  document.getElementById("dismissBtn")?.addEventListener("click", () => {
+    if (autoLockTimer) clearInterval(autoLockTimer);
+    threatOverlay.setAttribute("hidden", "");
+  });
+
+  // --- Buttons Handling ---
+  document.getElementById("simAttackBtn")?.addEventListener("click", () => {
+    appendLog("Initiating simulated ransomware attack...", "warn");
+    if (isConnected && ws) {
+      ws.send(JSON.stringify({ action: "simulate_attack" }));
+    } else {
+      // Local simulation fallback
+      triggerThreatAlert(7.94, 284, "ransomware_sim.exe", 4920);
+    }
+  });
+
+  document.getElementById("resetBtn")?.addEventListener("click", () => {
+    appendLog("Resetting security agent & firewall state...", "info");
+    peakEntropy = 4.12;
+    if (isConnected && ws) {
+      ws.send(JSON.stringify({ action: "reset" }));
+    }
+    document.getElementById("phaseEnforcer").className = "phase-item phase-item--dim";
+    document.getElementById("phaseEnforcer").querySelector(".phase-item__status").textContent = "STANDBY";
+    document.getElementById("phaseVault").className = "phase-item phase-item--dim";
+    document.getElementById("phaseVault").querySelector(".phase-item__status").textContent = "IDLE";
+    updateTelemetryUI(3.24, 12, 0, "NORMAL", 0.08);
+  });
+
+  document.getElementById("snapshotBtn")?.addEventListener("click", () => {
+    appendLog("Creating manual system snapshot...", "info");
+    const fakeCID = "QmManualSnap" + Math.random().toString(36).substring(2, 8);
+    const fakeTX = "0x" + Array.from({length: 40}, () => Math.floor(Math.random()*16).toString(16)).join("");
+    document.getElementById("vaultCID").textContent = fakeCID;
+    document.getElementById("vaultTX").textContent = fakeTX;
+    const countEl = document.getElementById("vaultSnaps");
+    if (countEl) countEl.textContent = parseInt(countEl.textContent || "0") + 1;
+    appendLog(`Manual snapshot pinned to IPFS: ${fakeCID}`, "lockdown");
+  });
+
+  // --- Local Fallback Telemetry Generator ---
+  function startLocalSimulation() {
+    if (simInterval) clearInterval(simInterval);
+    simInterval = setInterval(() => {
+      if (isConnected) return;
+      const baseEntropy = 3.0 + Math.random() * 1.2;
+      const baseIO = Math.floor(8 + Math.random() * 8);
+      updateTelemetryUI(baseEntropy, baseIO, 0, "NORMAL", 0.08);
+    }, 1000);
+  }
+
+})();
+
+</script>
+</body>
+</html>

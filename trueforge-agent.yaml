@@ -1,0 +1,749 @@
+# AutoVault — Definitive TrueForge Agent Definition
+# Maximum feature utilization for Agent Harness Hackathon
+#
+# This single YAML consolidates all capabilities:
+# - 23 MCP tools across 4 servers
+# - 5 specialized subagents
+# - Code Mode orchestration
+# - Sandbox execution (Daytona)
+# - Dynamic skill loading (4 skills)
+# - Multi-step approval workflows with risk scoring
+# - Generative UI (6 templates)
+# - Context engineering (compaction, deferred loading, offloading)
+# - Persistent sessions across reconnects
+# - Predictive analysis
+# - Automated playbooks
+# - Multi-agent orchestration
+
+name: autovault-security-agent
+version: "3.0.0"
+description: |
+  Advanced AI security operations agent built on TrueForge with maximum feature
+  utilization. Monitors file systems for ransomware, detects threats using ML,
+  coordinates incident response with human-in-the-loop approvals, and maintains
+  a blockchain-verified audit trail via IPFS.
+
+# ── Model Configuration ──────────────────────────────────────────────
+
+model:
+  provider: openai
+  name: gpt-4o
+  temperature: 0.1
+  max_tokens: 16384
+  fallback_model: gpt-4o-mini  # For subagents to reduce cost
+
+# ── Agent Instructions ────────────────────────────────────────────────
+
+instructions: |
+  You are AutoVault, an advanced AI security operations agent running on TrueForge.
+
+  ## Your Role
+
+  You are a Security Operations Center (SOC) agent specialized in ransomware defense.
+  You monitor file systems, detect threats, coordinate incident response, and maintain
+  an immutable audit trail. You think step-by-step, validate findings with multiple
+  tools, and always request human approval before irreversible actions.
+
+  ## Available Tools (4 MCP Servers, 23 Tools)
+
+  ### Core Security (autovault-mcp)
+  - scan_directory: Scan for ransomware indicators (entropy, extensions, modifications)
+  - analyze_threat: ML-based anomaly detection (Isolation Forest)
+  - analyze_file: Deep analysis of individual files
+  - investigate_process: Check process connections, files, CPU/memory usage
+  - create_snapshot: Create IPFS snapshot for recovery
+  - get_vault_status: Check blockchain vault state
+  - get_system_health: Overall system health metrics
+  - simulate_normal_activity: Generate test data for demonstrations
+
+  ### Network Monitoring (autovault-network)
+  - get_network_connections: All active network connections
+  - get_network_io: Network I/O statistics (bytes, packets, errors)
+  - get_listening_ports: All listening ports with process names
+  - analyze_network: Pattern analysis for anomalies
+  - check_suspicious_connections: Check against suspicious port list
+
+  ### Forensic Analysis (autovault-forensics)
+  - analyze_file_deep: Hashes, entropy map, full metadata
+  - build_timeline: File modification timeline
+  - detect_ransomware: Comprehensive ransomware indicator detection
+  - compare_snapshots: Diff two file snapshots
+  - generate_forensic_report: Full forensic analysis report
+
+  ## Available Subagents (5 Specialized Investigators)
+
+  - process-investigator: Analyze suspicious processes in parallel
+  - network-analyzer: Monitor network traffic for C2, exfiltration
+  - forensics-analyst: Deep forensic analysis and timeline reconstruction
+  - threat-hunter: Proactive threat hunting across file system
+  - incident-responder: Coordinate response playbooks
+
+  ## Response Protocol
+
+  When you receive a security alert or observe suspicious activity:
+
+  1. **Detect**: Use scan_directory, analyze_threat, and detect_ransomware
+  2. **Validate**: Cross-validate with a second tool (analyze_file, analyze_file_deep)
+  3. **Classify**: Assign severity P1 (CRITICAL) to P4 (LOW)
+  4. **Delegate**: Spawn subagents for parallel investigation
+  5. **Approve**: Request human approval for irreversible actions
+  6. **Execute**: Run approved actions (lockdown, block, restore)
+  7. **Verify**: Confirm actions succeeded
+  8. **Report**: Generate comprehensive reports
+  9. **Document**: Log everything for forensic audit trail
+
+  ## Critical Rules
+
+  - NEVER execute irreversible actions without human approval
+  - ALWAYS validate findings with at least 2 different tools
+  - USE subagents for parallel investigation to speed response
+  - GENERATE reports for every incident
+  - PRESERVE evidence before any remediation
+  - THINK step-by-step and explain your reasoning
+
+# ── MCP Tools (4 Servers, 23 Tools) ──────────────────────────────────
+
+tools:
+  # ═══ Server: autovault-mcp (8 tools) ═══
+
+  - name: scan_directory
+    type: mcp
+    server: autovault-mcp
+    description: Scan a directory for ransomware indicators — high-entropy files, suspicious extensions, recent mass modifications
+    input_schema:
+      type: object
+      properties:
+        directory:
+          type: string
+          description: Directory path to scan
+      required: [directory]
+
+  - name: analyze_threat
+    type: mcp
+    server: autovault-mcp
+    description: ML-based threat detection using Isolation Forest on entropy, I/O velocity, and extension churn
+    input_schema:
+      type: object
+      properties:
+        entropy:
+          type: number
+          description: Current Shannon entropy reading (0-8)
+        io_velocity:
+          type: integer
+          description: File operations per second
+        extension_churn:
+          type: integer
+          description: Number of suspicious extension changes
+      required: [entropy, io_velocity, extension_churn]
+
+  - name: analyze_file
+    type: mcp
+    server: autovault-mcp
+    description: Analyze a specific file for ransomware indicators including entropy and content patterns
+    input_schema:
+      type: object
+      properties:
+        filepath:
+          type: string
+          description: Path to the file to analyze
+      required: [filepath]
+
+  - name: investigate_process
+    type: mcp
+    server: autovault-mcp
+    description: Investigate a suspicious process — open files, network connections, CPU/memory usage
+    input_schema:
+      type: object
+      properties:
+        pid:
+          type: integer
+          description: Process ID to investigate
+      required: [pid]
+
+  - name: create_snapshot
+    type: mcp
+    server: autovault-mcp
+    description: Create an IPFS snapshot of a directory for immutable backup and recovery
+    input_schema:
+      type: object
+      properties:
+        directory:
+          type: string
+          description: Directory to snapshot
+      required: [directory]
+
+  - name: get_vault_status
+    type: mcp
+    server: autovault-mcp
+    description: Get current blockchain vault status — latest CID, transaction hash, lockdown history
+    input_schema:
+      type: object
+      properties: {}
+
+  - name: get_system_health
+    type: mcp
+    server: autovault-mcp
+    description: Get overall system health — watcher status, brain status, snapshots, lockdowns, network state
+    input_schema:
+      type: object
+      properties: {}
+
+  - name: simulate_normal_activity
+    type: mcp
+    server: autovault-mcp
+    description: Generate normal file activity for testing and demonstration purposes
+    input_schema:
+      type: object
+      properties:
+        directory:
+          type: string
+          description: Directory to generate activity in
+      required: [directory]
+
+  # ═══ Server: autovault-network (5 tools) ═══
+
+  - name: get_network_connections
+    type: mcp
+    server: autovault-network
+    description: Get all active network connections with full details (local/remote addresses, status, PID)
+    input_schema:
+      type: object
+      properties: {}
+
+  - name: get_network_io
+    type: mcp
+    server: autovault-network
+    description: Get network I/O statistics — bytes sent/received, packets, errors, drops
+    input_schema:
+      type: object
+      properties: {}
+
+  - name: get_listening_ports
+    type: mcp
+    server: autovault-network
+    description: Get all listening ports and their associated processes
+    input_schema:
+      type: object
+      properties: {}
+
+  - name: analyze_network
+    type: mcp
+    server: autovault-network
+    description: Analyze network patterns for anomalies — connection counts, foreign IPs, suspicious patterns
+    input_schema:
+      type: object
+      properties: {}
+
+  - name: check_suspicious_connections
+    type: mcp
+    server: autovault-network
+    description: Check for connections to known suspicious ports (4444, 5555, 6666, etc.)
+    input_schema:
+      type: object
+      properties:
+        suspicious_ports:
+          type: array
+          items:
+            type: integer
+          description: List of suspicious ports to check
+
+  # ═══ Server: autovault-forensics (5 tools) ═══
+
+  - name: analyze_file_deep
+    type: mcp
+    server: autovault-forensics
+    description: Deep forensic file analysis — MD5/SHA1/SHA256 hashes, entropy map, full metadata
+    input_schema:
+      type: object
+      properties:
+        filepath:
+          type: string
+          description: Path to file to analyze
+      required: [filepath]
+
+  - name: build_timeline
+    type: mcp
+    server: autovault-forensics
+    description: Build file modification timeline for forensic reconstruction
+    input_schema:
+      type: object
+      properties:
+        directory:
+          type: string
+          description: Directory to analyze
+      required: [directory]
+
+  - name: detect_ransomware
+    type: mcp
+    server: autovault-forensics
+    description: Comprehensive ransomware indicator detection — encrypted files, suspicious extensions, mass modifications, ransom notes
+    input_schema:
+      type: object
+      properties:
+        directory:
+          type: string
+          description: Directory to scan
+      required: [directory]
+
+  - name: compare_snapshots
+    type: mcp
+    server: autovault-forensics
+    description: Compare two file snapshots to detect added, removed, or modified files
+    input_schema:
+      type: object
+      properties:
+        snapshot_before:
+          type: string
+          description: JSON string of before state with files array
+        snapshot_after:
+          type: string
+          description: JSON string of after state with files array
+      required: [snapshot_before, snapshot_after]
+
+  - name: generate_forensic_report
+    type: mcp
+    server: autovault-forensics
+    description: Generate comprehensive forensic report — timeline, indicators, risk assessment, recommendations
+    input_schema:
+      type: object
+      properties:
+        directory:
+          type: string
+          description: Directory to report on
+      required: [directory]
+
+  # ═══ Server: autovault-threat-intel (5 tools) ═══
+
+  - name: analyze_file_iocs
+    type: mcp
+    server: autovault-threat-intel
+    description: Analyze a file for indicators of compromise — suspicious strings, malware families, MITRE techniques
+    input_schema:
+      type: object
+      properties:
+        filepath:
+          type: string
+          description: Path to file to analyze
+      required: [filepath]
+
+  - name: analyze_directory_threats
+    type: mcp
+    server: autovault-threat-intel
+    description: Analyze entire directory for threat indicators, ransomware patterns, and IOCs
+    input_schema:
+      type: object
+      properties:
+        directory:
+          type: string
+          description: Directory to analyze
+      required: [directory]
+
+  - name: get_mitre_technique
+    type: mcp
+    server: autovault-threat-intel
+    description: Get details about a MITRE ATT&CK technique (T1486, T1489, T1490, etc.)
+    input_schema:
+      type: object
+      properties:
+        technique_id:
+          type: string
+          description: MITRE technique ID (e.g., T1486)
+      required: [technique_id]
+
+  - name: check_known_malicious
+    type: mcp
+    server: autovault-threat-intel
+    description: Check if a file hash exists in known malicious database
+    input_schema:
+      type: object
+      properties:
+        file_hash:
+          type: string
+          description: MD5 or SHA256 hash to check
+      required: [file_hash]
+
+  - name: generate_threat_report
+    type: mcp
+    server: autovault-threat-intel
+    description: Generate comprehensive threat intelligence report with MITRE mapping and recommendations
+    input_schema:
+      type: object
+      properties:
+        directory:
+          type: string
+          description: Directory to analyze
+      required: [directory]
+
+# ── Skills (4 Specialized Instruction Packs) ──────────────────────────
+
+skills:
+  - name: incident-response
+    source: ./skills/incident-response/SKILL.md
+    description: Incident response playbooks and procedures
+    load_condition: threat_level >= HIGH
+
+  - name: threat-hunting
+    source: ./skills/threat-hunting/SKILL.md
+    description: Proactive threat hunting methodologies
+    load_condition: mode == proactive OR threat_level >= MEDIUM
+
+  - name: forensic-analysis
+    source: ./skills/forensic-analysis/SKILL.md
+    description: Digital forensics procedures and evidence handling
+    load_condition: investigation_type == forensic OR threat_level >= HIGH
+
+  - name: autovault-security
+    source: ./mcp-server/SKILL.md
+    description: Core security monitoring and response protocols
+    load_condition: always
+
+# ── Sandbox (Daytona — Safe Code Execution) ──────────────────────────
+
+sandbox:
+  enabled: true
+  provider: daytona
+  image: python:3.10-slim
+  timeout: 900  # 15 minutes max
+  capabilities:
+    - code_execution
+    - file_access
+    - network_read
+    - package_install
+    - shell_access
+  preinstalled_packages:
+    - numpy
+    - pandas
+    - scikit-learn
+    - matplotlib
+    - requests
+    - seaborn
+    - plotly
+
+  # Code Mode — Chain multiple MCP calls in single sandbox script
+  code_mode:
+    enabled: true
+    description: Write Python scripts that orchestrate multiple tool calls
+    max_script_size: 50000
+    allowed_imports:
+      - json
+      - os
+      - sys
+      - time
+      - hashlib
+      - math
+      - datetime
+      - collections
+      - re
+      - numpy
+      - pandas
+
+# ── Human Approval Workflows (Multi-step with Risk Scoring) ──────────
+
+approval:
+  enabled: true
+
+  rules:
+    # P1 CRITICAL — Immediate approval, 30s timeout
+    - action: execute_lockdown
+      requires_approval: true
+      severity: P1
+      risk_score: 90
+      message: "🚨 CRITICAL: Execute full system lockdown?"
+      timeout: 30
+      auto_deny: false
+      justification_required: true
+      description: "Suspend all processes, block network, preserve evidence"
+
+    - action: terminate_process
+      requires_approval: true
+      severity: P1
+      risk_score: 75
+      message: "⚠️ HIGH: Terminate process {pid} ({process_name})?"
+      timeout: 60
+      auto_deny: false
+      justification_required: true
+      description: "Kill suspicious process immediately"
+
+    # P2 HIGH — Approval required, 120s timeout
+    - action: block_network
+      requires_approval: true
+      severity: P2
+      risk_score: 60
+      message: "🌐 Block network connections to {target}?"
+      timeout: 120
+      auto_deny: false
+      justification_required: true
+      description: "Isolate system from network"
+
+    - action: restore_files
+      requires_approval: true
+      severity: P2
+      risk_score: 50
+      message: "🔄 Restore files from IPFS snapshot {cid}?"
+      timeout: 120
+      auto_deny: false
+      justification_required: true
+      description: "Recover files from blockchain-verified backup"
+
+    - action: isolate_system
+      requires_approval: true
+      severity: P2
+      risk_score: 55
+      message: "🔒 Isolate system from all external connections?"
+      timeout: 90
+      auto_deny: false
+      justification_required: true
+      description: "Air-gap the system for investigation"
+
+    # P3 MEDIUM — Optional approval, 300s timeout, auto-deny
+    - action: modify_firewall
+      requires_approval: true
+      severity: P3
+      risk_score: 30
+      message: "🔥 Modify firewall rules?"
+      timeout: 300
+      auto_deny: true
+      justification_required: false
+      description: "Adjust firewall configuration"
+
+    - action: install_security_tool
+      requires_approval: true
+      severity: P3
+      risk_score: 25
+      message: "📦 Install security tool {tool_name}?"
+      timeout: 300
+      auto_deny: true
+      justification_required: false
+      description: "Install security analysis tool"
+
+    # P4 LOW — Auto-approve
+    - action: create_snapshot
+      requires_approval: false
+      severity: P4
+      risk_score: 10
+      message: "📸 Creating IPFS snapshot..."
+
+    - action: generate_report
+      requires_approval: false
+      severity: P4
+      risk_score: 5
+      message: "📊 Generating report..."
+
+    - action: scan_directory
+      requires_approval: false
+      severity: P4
+      risk_score: 5
+      message: "🔍 Scanning directory..."
+
+  # Multi-step approval workflow
+  workflow:
+    enabled: true
+    steps:
+      - name: detect
+        description: Initial threat detection
+        tools: [scan_directory, analyze_threat, detect_ransomware]
+        auto: true
+
+      - name: validate
+        description: Cross-validate with second tool
+        tools: [analyze_file_deep, analyze_file_iocs, analyze_network]
+        auto: true
+
+      - name: classify
+        description: Classify severity and recommend actions
+        auto: true
+
+      - name: approve
+        description: Get human approval for response actions
+        message: "Threat confirmed. Approve response plan?"
+        timeout: 300
+        justification_required: true
+
+      - name: execute
+        description: Execute approved response actions
+        requires_approval: false
+
+      - name: verify
+        description: Verify actions succeeded
+        auto: true
+
+      - name: report
+        description: Generate incident report
+        auto: true
+
+# ── Subagents (5 Specialized Parallel Investigators) ──────────────────
+
+subagents:
+  enabled: true
+  max_concurrent: 5
+  timeout: 300
+
+  templates:
+    - name: process-investigator
+      description: Analyze suspicious processes — open files, connections, resource usage
+      model: gpt-4o
+      tools:
+        - investigate_process
+        - analyze_file_iocs
+        - check_known_malicious
+      skills: [forensic-analysis]
+      timeout: 120
+
+    - name: network-analyzer
+      description: Monitor network traffic — connections, IO stats, port analysis, anomaly detection
+      model: gpt-4o
+      tools:
+        - get_network_connections
+        - get_network_io
+        - get_listening_ports
+        - analyze_network
+        - check_suspicious_connections
+      skills: [threat-hunting]
+      timeout: 120
+
+    - name: forensics-analyst
+      description: Deep forensic analysis — entropy mapping, timeline reconstruction, evidence collection
+      model: gpt-4o
+      tools:
+        - analyze_file_deep
+        - build_timeline
+        - compare_snapshots
+        - generate_forensic_report
+      skills: [forensic-analysis]
+      timeout: 180
+
+    - name: threat-hunter
+      description: Proactive threat hunting — directory scanning, IOC matching, ransomware detection
+      model: gpt-4o
+      tools:
+        - scan_directory
+        - analyze_directory_threats
+        - detect_ransomware
+        - get_mitre_technique
+      skills: [threat-hunting]
+      timeout: 120
+
+    - name: incident-responder
+      description: Coordinate incident response — snapshot, vault, reporting
+      model: gpt-4o
+      tools:
+        - create_snapshot
+        - get_vault_status
+        - get_system_health
+        - generate_forensic_report
+        - generate_threat_report
+      skills: [incident-response]
+      timeout: 180
+
+# ── Context Engineering ───────────────────────────────────────────────
+
+context:
+  max_history: 200
+  compaction:
+    enabled: true
+    strategy: smart
+    preserve_recent: 30
+    preserve_critical: true
+    summary_model: gpt-4o-mini  # Use cheaper model for summaries
+  deferred_tools:
+    enabled: true
+    threshold: 50
+    strategy: on_demand
+  large_responses:
+    enabled: true
+    offload_threshold: 10000
+    strategy: sandbox
+
+# ── Session Persistence ───────────────────────────────────────────────
+
+session:
+  persistence: true
+  storage: sqlite
+  key: autovault-session
+  reconnect_strategy: resume
+  state_file: .autovault-session.json
+  auto_save: true
+  save_interval: 30
+
+# ── Generative UI (6 Interactive Templates) ───────────────────────────
+
+generative_ui:
+  enabled: true
+  templates:
+    threat_card:
+      title: "Threat Detected"
+      description: "Interactive threat card with severity and recommended actions"
+      fields:
+        - threat_level
+        - risk_score
+        - affected_files
+        - mitre_techniques
+        - recommended_actions
+        - approval_required
+
+    forensics_report:
+      title: "Forensic Analysis Report"
+      description: "Comprehensive forensic report with timeline and evidence"
+      fields:
+        - report_id
+        - directory
+        - summary
+        - indicators
+        - timeline
+        - recommendations
+
+    approval_request:
+      title: "Approval Required"
+      description: "Human approval form with risk assessment"
+      fields:
+        - action
+        - severity
+        - risk_score
+        - justification
+        - risk_assessment
+        - timeout
+        - approval_options
+
+    system_status:
+      title: "System Status Dashboard"
+      description: "Real-time system health and threat overview"
+      fields:
+        - threat_level
+        - vault_state
+        - active_alerts
+        - system_health
+        - recent_events
+
+    investigation_panel:
+      title: "Investigation Panel"
+      description: "Multi-subagent investigation results"
+      fields:
+        - summary
+        - timeline
+        - iocs
+        - network_analysis
+        - process_analysis
+        - recommendations
+
+    playbook_executor:
+      title: "Incident Response Playbook"
+      description: "Step-by-step playbook execution with progress"
+      fields:
+        - playbook_name
+        - status
+        - current_step
+        - progress
+        - steps_completed
+        - steps_remaining
+
+# ── UI Configuration ──────────────────────────────────────────────────
+
+ui:
+  show_tool_calls: true
+  show_reasoning: true
+  show_approvals: true
+  show_subagents: true
+  show_generative_ui: true
+  show_agent_communication: true
+  theme: dark
+  layout: dashboard
