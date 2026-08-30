@@ -3,8 +3,8 @@
 
 [config]
 # Gemini 2.5 Flash is free and fast
-model = "gemini/gemini-2.5-flash"
-fallback_models = ["gemini/gemini-2.5-flash"]
+model = "gemini/gemini-2.0-flash"
+fallback_models = ["gemini/gemini-2.0-flash", "gemini/gemini-pro"]
 tools = ["review", "improve", "describe"]
 
 [pr_reviewer]
