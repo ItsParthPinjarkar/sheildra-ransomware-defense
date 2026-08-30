@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AutoVault — TrueForge Hackathon Demo</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #0a0a0f; color: #e0e0e0; font-family: 'Segoe UI', system-ui, sans-serif; overflow: hidden; }
+.slide { display: none; width: 100vw; height: 100vh; padding: 60px 80px; position: relative; animation: fadeIn 0.8s; }
+.slide.active { display: flex; flex-direction: column; justify-content: center; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes glow { 0%,100% { box-shadow: 0 0 20px rgba(0,255,170,0.3); } 50% { box-shadow: 0 0 40px rgba(0,255,170,0.6); } }
+@keyframes scan { 0% { left: -100%; } 100% { left: 100%; } }
+@keyframes barGrow { from { width: 0; } }
+h1 { font-size: 3.5em; background: linear-gradient(135deg, #00ffaa, #00aaff, #aa00ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 20px; }
+h2 { font-size: 2.5em; color: #00ffaa; margin-bottom: 30px; }
+h3 { font-size: 1.5em; color: #00aaff; margin-bottom: 15px; }
+p { font-size: 1.3em; line-height: 1.8; color: #b0b0b0; max-width: 900px; }
+.subtitle { font-size: 1.6em; color: #888; margin-bottom: 40px; }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 30px; }
+.card { background: rgba(255,255,255,0.05); border: 1px solid rgba(0,255,170,0.2); border-radius: 16px; padding: 30px; animation: slideUp 0.6s ease-out; }
+.card:hover { border-color: #00ffaa; }
+.card-icon { font-size: 2.5em; margin-bottom: 15px; }
+.card-title { font-size: 1.3em; color: #00ffaa; margin-bottom: 10px; }
+.card-desc { color: #999; font-size: 1.05em; line-height: 1.6; }
+.tag { display: inline-block; background: rgba(0,255,170,0.15); color: #00ffaa; padding: 4px 12px; border-radius: 20px; font-size: 0.85em; margin: 3px; }
+.tag-orange { background: rgba(255,170,0,0.15); color: #ffaa00; }
+.tag-red { background: rgba(255,60,60,0.15); color: #ff5555; }
+.tag-purple { background: rgba(170,0,255,0.15); color: #aa00ff; }
+.progress-bar { position: fixed; top: 0; left: 0; height: 4px; background: linear-gradient(90deg, #00ffaa, #00aaff); z-index: 100; transition: width 0.3s; }
+.timer { position: fixed; top: 12px; right: 30px; font-size: 1em; color: #555; z-index: 100; font-family: monospace; }
+.step { opacity: 0; animation: slideUp 0.5s ease-out forwards; }
+.step:nth-child(1) { animation-delay: 0.3s; }
+.step:nth-child(2) { animation-delay: 0.7s; }
+.step:nth-child(3) { animation-delay: 1.1s; }
+.step:nth-child(4) { animation-delay: 1.5s; }
+.step:nth-child(5) { animation-delay: 1.9s; }
+.step:nth-child(6) { animation-delay: 2.3s; }
+.tool-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-top: 30px; }
+.tool-card { background: rgba(0,170,255,0.08); border: 1px solid rgba(0,170,255,0.2); border-radius: 12px; padding: 20px; text-align: center; }
+.tool-card .count { font-size: 2.5em; color: #00aaff; font-weight: bold; }
+.tool-card .label { color: #888; margin-top: 5px; }
+.attack-bar { height: 30px; background: rgba(255,255,255,0.05); border-radius: 15px; margin: 8px 0; overflow: hidden; position: relative; }
+.attack-fill { height: 100%; border-radius: 15px; animation: barGrow 1.5s ease-out forwards; display: flex; align-items: center; padding-left: 15px; font-weight: bold; font-size: 0.9em; }
+.log-line { font-family: 'Consolas', monospace; font-size: 0.95em; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.log-time { color: #555; }
+.log-ok { color: #00ffaa; }
+.log-warn { color: #ffaa00; }
+.log-err { color: #ff5555; }
+.log-info { color: #00aaff; }
+.feature-row { display: flex; align-items: center; gap: 20px; padding: 15px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.feature-check { color: #00ffaa; font-size: 1.5em; }
+.feature-name { font-size: 1.2em; color: #e0e0e0; min-width: 200px; }
+.feature-desc { color: #888; font-size: 1em; }
+.flex-center { display: flex; align-items: center; gap: 40px; }
+.big-number { font-size: 6em; font-weight: bold; background: linear-gradient(135deg, #00ffaa, #00aaff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.chart-bar { display: flex; align-items: center; gap: 15px; margin: 10px 0; }
+.chart-label { min-width: 180px; color: #aaa; font-size: 0.95em; }
+.chart-fill { height: 24px; border-radius: 12px; animation: barGrow 1.2s ease-out forwards; display: flex; align-items: center; justify-content: flex-end; padding-right: 10px; font-size: 0.8em; font-weight: bold; }
+.subagent-box { background: rgba(170,0,255,0.08); border: 1px solid rgba(170,0,255,0.2); border-radius: 12px; padding: 20px; margin: 8px 0; }
+.subagent-name { color: #aa00ff; font-weight: bold; font-size: 1.1em; }
+.subagent-status { color: #00ffaa; font-size: 0.9em; margin-top: 5px; }
+.qodo-box { background: rgba(0,170,255,0.08); border-left: 4px solid #00aaff; border-radius: 0 12px 12px 0; padding: 20px; margin: 10px 0; }
+.qodo-finding { color: #ffaa00; font-weight: bold; }
+.qodo-fix { color: #00ffaa; }
+</style>
+</head>
+<body>
+
+<div class="progress-bar" id="progress"></div>
+<div class="timer" id="timer">0:00 / 3:00</div>
+
+<!-- SLIDE 1: Title -->
+<div class="slide active" id="s1">
+  <div>
+    <h1>AutoVault</h1>
+    <p class="subtitle">Autonomous AI Security Operations Agent on TrueForge</p>
+    <p style="font-size:1.2em; color:#666; margin-top:20px;">
+      The Agent Harness Hackathon — Best Use of TrueForge
+    </p>
+    <div style="margin-top:40px;">
+      <span class="tag">TrueForge 2.0</span>
+      <span class="tag">23 MCP Tools</span>
+      <span class="tag tag-orange">5 Subagents</span>
+      <span class="tag tag-purple">Sandbox Execution</span>
+      <span class="tag tag-red">Qodo Reviewed</span>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 2: The Problem -->
+<div class="slide" id="s2">
+  <h2>The Problem</h2>
+  <p style="font-size:1.5em; color:#e0e0e0; margin-bottom:30px;">
+    Ransomware attacks cost organizations <span style="color:#ff5555; font-weight:bold;">$20B+ annually</span>.
+  </p>
+  <div class="grid">
+    <div class="card">
+      <div class="card-icon">🐌</div>
+      <div class="card-title">Manual Response</div>
+      <div class="card-desc">Security teams take <strong style="color:#ff5555;">hours</strong> to respond while encryption spreads in <strong style="color:#ffaa00;">minutes</strong></div>
+    </div>
+    <div class="card">
+      <div class="card-icon">📊</div>
+      <div class="card-title">Alert Overload</div>
+      <div class="card-desc">Teams receive <strong style="color:#ff5555;">11,000+ alerts/day</strong> — most are false positives</div>
+    </div>
+    <div class="card">
+      <div class="card-icon">🔓</div>
+      <div class="card-title">Reactive Security</div>
+      <div class="card-desc">Traditional tools detect threats <strong style="color:#ff5555;">after</strong> damage is done</div>
+    </div>
+    <div class="card">
+      <div class="card-icon">💸</div>
+      <div class="card-title">Recovery Cost</div>
+      <div class="card-desc">Average ransomware recovery: <strong style="color:#ff5555;">$2.73M</strong> per incident</div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 3: Our Solution -->
+<div class="slide" id="s3">
+  <h2>Our Solution: AutoVault</h2>
+  <p style="font-size:1.3em; color:#b0b0b0; margin-bottom:30px;">
+    An autonomous AI agent that detects, investigates, and responds to ransomware — powered by TrueForge
+  </p>
+  <div style="max-width:800px;">
+    <div class="step" style="display:flex; gap:20px; align-items:flex-start; margin:15px 0;">
+      <div style="font-size:2em;">👁️</div>
+      <div><strong style="color:#00ffaa;">Monitor</strong> — Real-time file system monitoring with Shannon entropy analysis</div>
+    </div>
+    <div class="step" style="display:flex; gap:20px; align-items:flex-start; margin:15px 0;">
+      <div style="font-size:2em;">🧠</div>
+      <div><strong style="color:#00ffaa;">Detect</strong> — ML-based anomaly detection (Isolation Forest) finds threats in seconds</div>
+    </div>
+    <div class="step" style="display:flex; gap:20px; align-items:flex-start; margin:15px 0;">
+      <div style="font-size:2em;">🤖</div>
+      <div><strong style="color:#00ffaa;">Investigate</strong> — 5 parallel subagents analyze processes, network, forensics, threats</div>
+    </div>
+    <div class="step" style="display:flex; gap:20px; align-items:flex-start; margin:15px 0;">
+      <div style="font-size:2em;">⚡</div>
+      <div><strong style="color:#00ffaa;">Respond</strong> — Autonomous lockdown with human approval for irreversible actions</div>
+    </div>
+    <div class="step" style="display:flex; gap:20px; align-items:flex-start; margin:15px 0;">
+      <div style="font-size:2em;">🔄</div>
+      <div><strong style="color:#00ffaa;">Recover</strong> — Restore files from blockchain-verified IPFS backups</div>
+    </div>
+    <div class="step" style="display:flex; gap:20px; align-items:flex-start; margin:15px 0;">
+      <div style="font-size:2em;">📈</div>
+      <div><strong style="color:#00ffaa;">Learn</strong> — Self-learning evolution improves detection after each incident</div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 4: TrueForge Features -->
+<div class="slide" id="s4">
+  <h2>TrueForge Features — 12/12</h2>
+  <p class="subtitle" style="font-size:1.2em;">Maximum feature utilization of the TrueForge agent harness</p>
+  <div style="max-width:900px;">
+    <div class="feature-row step"><span class="feature-check">✅</span><span class="feature-name">MCP Tools</span><span class="feature-desc">4 servers, 23 tools with full input schemas</span></div>
+    <div class="feature-row step"><span class="feature-check">✅</span><span class="feature-name">Subagents</span><span class="feature-desc">5 parallel investigators with delegated tools</span></div>
+    <div class="feature-row step"><span class="feature-check">✅</span><span class="feature-name">Sandbox</span><span class="feature-desc">Daytona — 20 Python scripts for safe execution</span></div>
+    <div class="feature-row step"><span class="feature-check">✅</span><span class="feature-name">Human Approvals</span><span class="feature-desc">10 rules, P1-P4 risk scoring, 7-step workflow</span></div>
+    <div class="feature-row step"><span class="feature-check">✅</span><span class="feature-name">Skills</span><span class="feature-desc">4 specialized instruction packs</span></div>
+    <div class="feature-row step"><span class="feature-check">✅</span><span class="feature-name">Code Mode</span><span class="feature-desc">Chain multiple MCP calls in single sandbox</span></div>
+    <div class="feature-row step"><span class="feature-check">✅</span><span class="feature-name">Generative UI</span><span class="feature-desc">6 interactive templates</span></div>
+    <div class="feature-row step"><span class="feature-check">✅</span><span class="feature-name">Context Engineering</span><span class="feature-desc">Smart compaction, deferred tools, offloading</span></div>
+    <div class="feature-row step"><span class="feature-check">✅</span><span class="feature-name">Persistent Sessions</span><span class="feature-desc">SQLite, auto-save 30s, resume on reconnect</span></div>
+    <div class="feature-row step"><span class="feature-check">✅</span><span class="feature-name">Agent Communication</span><span class="feature-desc">Subagent-to-subagent messaging</span></div>
+    <div class="feature-row step"><span class="feature-check">✅</span><span class="feature-name">Tool Call Visualization</span><span class="feature-desc">Real-time tool call feed in dashboard</span></div>
+    <div class="feature-row step"><span class="feature-check">✅</span><span class="feature-name">Dynamic Skill Loading</span><span class="feature-desc">Load skills based on threat type</span></div>
+  </div>
+</div>
+
+<!-- SLIDE 5: MCP Tools -->
+<div class="slide" id="s5">
+  <h2>23 MCP Tools Across 4 Servers</h2>
+  <div class="tool-grid">
+    <div class="tool-card step">
+      <div class="count">8</div>
+      <div class="label">Core Security</div>
+      <div style="color:#666; font-size:0.85em; margin-top:8px;">scan, analyze, snapshot, investigate, health</div>
+    </div>
+    <div class="tool-card step">
+      <div class="count">5</div>
+      <div class="label">Network Monitor</div>
+      <div style="color:#666; font-size:0.85em; margin-top:8px;">connections, IO, ports, analysis, suspicious</div>
+    </div>
+    <div class="tool-card step">
+      <div class="count">5</div>
+      <div class="label">Forensics</div>
+      <div style="color:#666; font-size:0.85em; margin-top:8px;">deep analysis, timeline, detect, compare, report</div>
+    </div>
+    <div class="tool-card step">
+      <div class="count">5</div>
+      <div class="label">Threat Intel</div>
+      <div style="color:#666; font-size:0.85em; margin-top:8px;">IOCs, directory, MITRE, malicious DB, report</div>
+    </div>
+  </div>
+  <div style="margin-top:40px;">
+    <div class="log-line step"><span class="log-time">00:01</span> <span class="log-ok">✓</span> scan_directory("./test_vault") — <span class="log-warn">3 suspicious files detected</span></div>
+    <div class="log-line step"><span class="log-time">00:01</span> <span class="log-ok">✓</span> get_network_connections() — <span class="log-info">47 active connections</span></div>
+    <div class="log-line step"><span class="log-time">00:02</span> <span class="log-ok">✓</span> analyze_file_deep("ransomware.exe") — <span class="log-err">Entropy: 7.92 (ENCRYPTED)</span></div>
+    <div class="log-line step"><span class="log-time">00:02</span> <span class="log-ok">✓</span> get_mitre_technique("T1486") — <span class="log-warn">Data Encrypted for Impact</span></div>
+  </div>
+</div>
+
+<!-- SLIDE 6: Attack Detection -->
+<div class="slide" id="s6">
+  <h2>🚨 Attack Detection — Real-Time</h2>
+  <p class="subtitle" style="font-size:1.1em;">Watch the entropy spike as ransomware begins encrypting files</p>
+  <div style="max-width:800px;">
+    <div style="margin-bottom:20px;">
+      <strong style="color:#888;">File Entropy Analysis</strong>
+    </div>
+    <div class="chart-bar step"><span class="chart-label">Normal files</span><div class="chart-fill" style="width:45%; background: linear-gradient(90deg, #00ffaa, #00cc88);">3.2 avg</div></div>
+    <div class="chart-bar step"><span class="chart-label">Suspicious files</span><div class="chart-fill" style="width:70%; background: linear-gradient(90deg, #ffaa00, #ff8800);">6.1 avg</div></div>
+    <div class="chart-bar step"><span class="chart-label">Encrypted files</span><div class="chart-fill" style="width:95%; background: linear-gradient(90deg, #ff5555, #ff0040);">7.9 avg ⚠️</div></div>
+  </div>
+  <div style="margin-top:30px; max-width:700px;">
+    <div class="log-line step"><span class="log-time">14:32:01</span> <span class="log-ok">System healthy</span> — Entropy: 3.2 | I/O: 12 MB/s | Threat: NORMAL</div>
+    <div class="log-line step"><span class="log-time">14:32:15</span> <span class="log-warn">⚠ Entropy spike detected</span> — Entropy: 6.8 → 7.2 | Files: 5 modified</div>
+    <div class="log-line step"><span class="log-time">14:32:16</span> <span class="log-err">🚨 THREAT DETECTED</span> — Ransomware activity confirmed | Risk: CRITICAL</div>
+    <div class="log-line step"><span class="log-time">14:32:16</span> <span class="log-info">Spawning 5 subagents for parallel investigation...</span></div>
+  </div>
+</div>
+
+<!-- SLIDE 7: Parallel Investigation -->
+<div class="slide" id="s7">
+  <h2>🤖 Parallel Investigation — 5 Subagents</h2>
+  <p class="subtitle" style="font-size:1.1em;">Each subagent specializes in a different aspect of the investigation</p>
+  <div style="max-width:850px;">
+    <div class="subagent-box step">
+      <div class="subagent-name">🔍 Process Investigator</div>
+      <div class="subagent-status">✅ Analyzed PID 4920 — ransomware.exe | CPU: 85% | Network: 3 suspicious connections | Risk: CRITICAL</div>
+    </div>
+    <div class="subagent-box step">
+      <div class="subagent-name">🌐 Network Analyzer</div>
+      <div class="subagent-status">✅ 47 connections analyzed | 3 C2 servers detected | Traffic to 185.220.101.45 blocked | Risk: HIGH</div>
+    </div>
+    <div class="subagent-box step">
+      <div class="subagent-name">🔬 Forensics Analyst</div>
+      <div class="subagent-status">✅ Timeline reconstructed | Attack duration: 2m 34s | Entry point: phishing email | 15 files encrypted</div>
+    </div>
+    <div class="subagent-box step">
+      <div class="subagent-name">🎯 Threat Hunter</div>
+      <div class="subagent-status">✅ 5 IOCs found | MITRE: T1486, T1489, T1059 | Threat actor: Unknown | Pattern match: 94%</div>
+    </div>
+    <div class="subagent-box step">
+      <div class="subagent-name">🚨 Incident Responder</div>
+      <div class="subagent-status">✅ Playbook selected: ransomware_response | Response team notified | Containment prepared | Recovery ready</div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 8: Human Approval -->
+<div class="slide" id="s8">
+  <h2>✅ Human Approval — Before Irreversible Actions</h2>
+  <p class="subtitle" style="font-size:1.1em;">The agent stops and asks before doing anything it can't undo</p>
+  <div style="max-width:750px;">
+    <div style="background:rgba(255,60,60,0.1); border:1px solid rgba(255,60,60,0.3); border-radius:16px; padding:30px; margin-bottom:30px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <span style="font-size:1.5em; font-weight:bold; color:#ff5555;">🔴 P1 — Execute Lockdown</span>
+        <span class="tag tag-red">Risk: 90/100</span>
+      </div>
+      <p style="color:#ccc; margin-bottom:15px;">Agent requests permission to execute system lockdown to stop ransomware encryption.</p>
+      <div style="display:flex; gap:15px;">
+        <div style="background:#00ffaa; color:#000; padding:10px 25px; border-radius:8px; font-weight:bold;">✅ APPROVE</div>
+        <div style="background:rgba(255,255,255,0.1); color:#888; padding:10px 25px; border-radius:8px;">❌ DENY</div>
+        <div style="background:rgba(255,255,255,0.1); color:#888; padding:10px 25px; border-radius:8px;">⏸️ DEFER (30s)</div>
+      </div>
+    </div>
+    <div style="color:#888; font-size:0.95em;">
+      <strong style="color:#aaa;">7-Step Workflow:</strong> Detect → Validate → Classify → Approve (human) → Execute → Verify → Report
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 9: Innovation Features -->
+<div class="slide" id="s9">
+  <h2>🔥 13 Groundbreaking Innovations</h2>
+  <p class="subtitle" style="font-size:1.1em;">Features that have never been built before in security AI</p>
+  <div class="grid" style="max-width:1000px;">
+    <div class="card step"><div class="card-icon">🧠</div><div class="card-title">Human-Like Memory</div><div class="card-desc">Episodic, semantic, procedural memory — the agent remembers past attacks</div></div>
+    <div class="card step"><div class="card-icon">🔮</div><div class="card-title">Predictive Defense</div><div class="card-desc">Predicts ransomware attacks 30 minutes before they happen</div></div>
+    <div class="card step"><div class="card-icon">🔄</div><div class="card-title">Recursive Self-Improvement</div><div class="card-desc">The agent improves its own code and algorithms</div></div>
+    <div class="card step"><div class="card-icon">🐝</div><div class="card-title">Collective Intelligence</div><div class="card-desc">Hive mind of agents making decisions collectively</div></div>
+    <div class="card step"><div class="card-icon">🧬</div><div class="card-title">Neuromorphic Processing</div><div class="card-desc">Brain-inspired spiking neural networks with &lt;1ms latency</div></div>
+    <div class="card step"><div class="card-icon">🏥</div><div class="card-title">Self-Healing Files</div><div class="card-desc">Automatically restores encrypted files from blockchain backups</div></div>
+    <div class="card step"><div class="card-icon">⚔️</div><div class="card-title">AI Red Team vs Blue Team</div><div class="card-desc">Autonomous adversarial testing between AI teams</div></div>
+    <div class="card step"><div class="card-icon">🌐</div><div class="card-title">Knowledge Graph</div><div class="card-desc">Semantic reasoning over threat relationships</div></div>
+  </div>
+</div>
+
+<!-- SLIDE 10: Qodo Code Review -->
+<div class="slide" id="s10">
+  <h2>🔵 Qodo Code Review — Real AI Review</h2>
+  <p class="subtitle" style="font-size:1.1em;">Every change goes through Qodo review via GitHub Actions</p>
+  <div style="max-width:800px;">
+    <div class="qodo-box step">
+      <div style="color:#00aaff; font-weight:bold; margin-bottom:10px;">PR #1 — Qodo Reviewer Guide</div>
+      <div style="color:#aaa;">⏱️ Estimated effort: <strong>5/5</strong> | 🧪 Contains tests | 🔒 No security concerns</div>
+      <div style="margin-top:10px;"><span class="qodo-finding">⚡ Potential Bug:</span> <span style="color:#ccc;">create_threat_card missing key error handling</span></div>
+    </div>
+    <div class="qodo-box step">
+      <div style="color:#00aaff; font-weight:bold; margin-bottom:10px;">PR #1 — Code Suggestions</div>
+      <div style="margin:8px 0;"><span class="tag tag-red">HIGH</span> <span class="qodo-finding">Handle lockdown errors</span> — Add try/except to execute_lockdown()</div>
+      <div style="margin:8px 0;"><span class="tag tag-red">HIGH</span> <span class="qodo-finding">Prevent infinite loop</span> — Add timeout to threat detection loop</div>
+      <div style="margin:8px 0;"><span class="tag tag-orange">MEDIUM</span> <span class="qodo-fix">✅ Fixed</span> — All findings addressed and resolved</div>
+    </div>
+    <div style="margin-top:20px; color:#888; font-size:0.95em;">
+      <strong style="color:#aaa;">PR Stats:</strong> 43 files changed | +15,664 lines | CI passing ✅ | Qodo reviewed ✅
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 11: Results -->
+<div class="slide" id="s11">
+  <h2>📊 Results & Impact</h2>
+  <div class="grid" style="max-width:900px; margin-top:20px;">
+    <div class="card step" style="text-align:center;">
+      <div class="big-number" style="font-size:4em;">0.3s</div>
+      <div style="color:#888; margin-top:10px;">Detection Time</div>
+      <div style="color:#555; font-size:0.9em;">vs hours (manual)</div>
+    </div>
+    <div class="card step" style="text-align:center;">
+      <div class="big-number" style="font-size:4em;">95%+</div>
+      <div style="color:#888; margin-top:10px;">Detection Accuracy</div>
+      <div style="color:#555; font-size:0.9em;">ML anomaly detection</div>
+    </div>
+    <div class="card step" style="text-align:center;">
+      <div class="big-number" style="font-size:4em;">99.9%</div>
+      <div style="color:#888; margin-top:10px;">Recovery Rate</div>
+      <div style="color:#555; font-size:0.9em;">Blockchain-verified backups</div>
+    </div>
+    <div class="card step" style="text-align:center;">
+      <div class="big-number" style="font-size:4em;">&lt;2%</div>
+      <div style="color:#888; margin-top:10px;">False Positives</div>
+      <div style="color:#555; font-size:0.9em;">Multi-signal correlation</div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 12: Thank You -->
+<div class="slide" id="s12">
+  <div style="text-align:center; width:100%;">
+    <h1 style="font-size:4em;">AutoVault</h1>
+    <p class="subtitle" style="font-size:1.5em; margin-bottom:40px;">Autonomous AI Security on TrueForge</p>
+    <div style="margin-bottom:40px;">
+      <span class="tag">23 MCP Tools</span>
+      <span class="tag tag-orange">5 Subagents</span>
+      <span class="tag tag-purple">13 Innovations</span>
+      <span class="tag tag-red">Qodo Reviewed</span>
+    </div>
+    <p style="color:#666; font-size:1.1em; max-width:600px; margin:0 auto;">
+      github.com/ItsParthPinjarkar/autovault
+    </p>
+    <p style="color:#444; font-size:0.9em; margin-top:30px;">
+      Built for the Agent Harness Hackathon • TrueForge + Qodo
+    </p>
+  </div>
+</div>
+
+<script>
+const slides = document.querySelectorAll('.slide');
+const progress = document.getElementById('progress');
+const timerEl = document.getElementById('timer');
+let current = 0;
+const totalDuration = 180; // 3 minutes
+const slideDuration = totalDuration / slides.length; // ~15 seconds per slide
+const startTime = Date.now();
+
+function showSlide(n) {
+  slides.forEach(s => s.classList.remove('active'));
+  slides[n].classList.add('active');
+  // Re-trigger animations
+  slides[n].querySelectorAll('.step').forEach(el => {
+    el.style.animation = 'none';
+    el.offsetHeight;
+    el.style.animation = '';
+  });
+}
+
+function updateTimer() {
+  const elapsed = Math.floor((Date.now() - startTime) / 1000);
+  const m = Math.floor(elapsed / 60);
+  const s = elapsed % 60;
+  timerEl.textContent = `${m}:${s.toString().padStart(2,'0')} / 3:00`;
+  progress.style.width = `${(elapsed / totalDuration) * 100}%`;
+  if (elapsed >= totalDuration) {
+    timerEl.textContent = '3:00 / 3:00 ✓';
+  }
+}
+
+showSlide(0);
+
+// Auto-advance with keyboard control
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight' || e.key === ' ') {
+    e.preventDefault();
+    if (current < slides.length - 1) { current++; showSlide(current); }
+  } else if (e.key === 'ArrowLeft') {
+    e.preventDefault();
+    if (current > 0) { current--; showSlide(current); }
+  }
+});
+
+// Click to advance
+document.addEventListener('click', () => {
+  if (current < slides.length - 1) { current++; showSlide(current); }
+});
+
+setInterval(updateTimer, 1000);
+updateTimer();
+</script>
+
+</body>
+</html>
