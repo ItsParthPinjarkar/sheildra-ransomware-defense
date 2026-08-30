@@ -16,6 +16,12 @@ jobs:
       issues: write
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
       - name: PR Agent review
         uses: qodo-ai/pr-agent@main
         env:
@@ -23,9 +29,16 @@ jobs:
           GOOGLE_AI_STUDIO__GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           config.model: "gemini/gemini-2.5-flash"
           config.fallback_models: '["gemini/gemini-2.5-flash"]'
+          config.patch: "true"
+          config.stage_pre_secret: "true"
           github_action_config.auto_review: "true"
           github_action_config.auto_describe: "true"
           github_action_config.auto_improve: "true"
+          github_action_config.pr_actions: '["opened", "reopened", "ready_for_review", "synchronize"]'
+          pr_code_suggestions.num_code_suggestions: "5"
+          pr_reviewer.review_effort: "heavy"
+          pr_reviewer.enable_security_scanning: "true"
+          pr_description.enable_semantic_types: "true"
         with:
           command: review
 
