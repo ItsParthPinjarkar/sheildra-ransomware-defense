@@ -1,15 +1,11 @@
 # PR-Agent / Qodo Configuration for AutoVault
-# Uses OpenRouter as the model provider
+# Uses Google Gemini (FREE!) as the AI model
 
 [config]
-# Use OpenRouter as OpenAI-compatible provider
-model = "gpt-4o"
-fallback_models = ["openai/gpt-4o-mini"]
+# Gemini 2.5 Flash is free and fast
+model = "gemini/gemini-2.5-flash"
+fallback_models = ["gemini/gemini-2.5-flash"]
 tools = ["review", "improve", "describe"]
-
-[openai]
-# OpenRouter is OpenAI-compatible
-api_base = "https://openrouter.ai/api/v1"
 
 [pr_reviewer]
 enable_security_scanning = true
