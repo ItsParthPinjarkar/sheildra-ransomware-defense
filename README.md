@@ -183,21 +183,47 @@ AutoVault uses **every major TrueForge feature** at production depth:
 
 ---
 
-## 🛠️ Tech Stack
+## 🛠️ Tools & Technologies Used
+
+### Required by Hackathon Rules
+
+| Tool | How We Use It | Where in Code |
+| :--- | :--- | :--- |
+| **TrueForge** (Required) | Agent harness — the core runtime that connects model to tools, sandbox, approvals, and sessions | `trueforge-agent.yaml` (v3.0), `agent/main.py` |
+| **Qodo** (Required) | AI code review on every PR via GitHub Actions | `.github/workflows/pr-agent.yml`, `.pr_agent.toml` |
+| **GitHub PRs** (Required) | Every change goes through PR, never direct push to main | PR [#1](https://github.com/ItsParthPinjarkar/autovault/pull/1) |
+| **Open Source** (Required) | MIT License, public repo, full source code | `LICENSE`, public GitHub repo |
+
+### TrueForge Features (12/12)
+
+| Feature | Implementation |
+| :--- | :--- |
+| **MCP Tools** | 4 servers, 23 tools — `mcp-server/server.py`, `network_monitor.py`, `forensics.py`, `threat_intel.py` |
+| **Subagents** | 5 parallel investigators — configured in `trueforge-agent.yaml` under `subagents` |
+| **Sandbox** | Daytona with 20 Python scripts — `sandbox-scripts/` directory |
+| **Human Approvals** | 10 rules, P1-P4 risk scoring, 7-step workflow — `trueforge-agent.yaml` under `approval` |
+| **Skills** | 4 instruction packs — `skills/incident-response/`, `threat-hunting/`, `forensic-analysis/`, `mcp-server/SKILL.md` |
+| **Code Mode** | Chain MCP calls in sandbox — `sandbox-scripts/code_mode_orchestrator.py` |
+| **Generative UI** | 6 templates — `sandbox-scripts/generative_ui.py` |
+| **Context Engineering** | Smart compaction, deferred tools, offloading — `trueforge-agent.yaml` under `context` |
+| **Persistent Sessions** | SQLite, auto-save 30s — `trueforge-agent.yaml` under `session` |
+| **Agent Communication** | Subagent-to-subagent messaging — `mcp-server/multi_agent_orchestrator.py` |
+| **Tool Call Visualization** | Real-time feed — `dashboard/dashboard.js` |
+| **Dynamic Skill Loading** | Load by threat type — `mcp-server/dynamic_skill_loader.py` |
+
+### Additional Technologies
 
 | Component | Technology | Purpose |
 | :--- | :--- | :--- |
-| **Agent Harness** | TrueForge 2.0 | Full feature utilization — 12/12 features |
-| **MCP Servers** | Python + MCP SDK v2 | 4 specialized tool servers, 23 tools |
-| **Subagents** | TrueForge Subagents | 5 parallel investigators |
-| **Sandbox** | Daytona | Safe code execution with 20 scripts |
-| **ML Engine** | scikit-learn | Isolation Forest anomaly detection |
-| **Blockchain** | Solidity + Polygon Amoy | Immutable audit trail |
-| **Storage** | IPFS / Pinata | Decentralized file snapshots |
-| **Dashboard** | Chart.js + Vanilla JS | Real-time SOC cyberpunk UI |
+| **MCP SDK** | Python + MCP SDK v2 | 4 specialized tool servers with `@app.tool()` decorators |
+| **ML Engine** | scikit-learn | Isolation Forest anomaly detection — `agent/brain.py` |
+| **Blockchain** | Solidity + Polygon Amoy | Immutable audit trail — `contracts/AutoVaultRecovery.sol` |
+| **Storage** | IPFS / Pinata | Decentralized file snapshots — `agent/vault.py` |
+| **Dashboard** | Chart.js + Vanilla JS | Real-time SOC cyberpunk UI — `dashboard/` |
 | **Code Review** | Qodo / PR-Agent | AI-powered PR review via GitHub Actions |
-| **CI/CD** | GitHub Actions | Lint, test, security scan, build |
+| **CI/CD** | GitHub Actions | Build, lint, test, security scan — `.github/workflows/ci.yml` |
 | **Language** | Python 3.10+ | Backend agent and MCP servers |
+| **AI Assistant** | Codebuff | AI coding assistant used during development |
 
 ---
 
@@ -625,38 +651,62 @@ DEMO_MODE=True
 ## Qodo Code Review Evidence
 
 ### Setup
-AutoVault uses [Qodo](https://www.qodo.ai/) (via PR-Agent GitHub Action) for automated code review on every pull request. The configuration is in `.pr_agent.toml` with `review_effort = "heavy"` for maximum review depth.
+AutoVault uses [Qodo](https://www.qodo.ai/) (via PR-Agent GitHub Action) for automated code review on every pull request.
 
-### Representative Merged PR
-[PR #1: feat: add TrueForge integration with 23 MCP tools, 5 subagents, and advanced security features](https://github.com/ItsParthPinjarkar/autovault/pull/1)
+- **Configuration**: `.pr_agent.toml` with `review_effort = "heavy"`
+- **GitHub Action**: `.github/workflows/pr-agent.yml` — triggers on every PR (opened, synchronize, reopened)
+- **Model**: OpenRouter Llama for AI-powered review
+- **Auto-review**: `auto_review`, `auto_describe`, `auto_improve` all enabled
 
-### What Qodo Surfaced
-Qodo identified the following categories of findings:
+### Representative PR with Qodo Review
+[**PR #1**: feat: add TrueForge integration with 23 MCP tools, 5 subagents, and advanced security features](https://github.com/ItsParthPinjarkar/autovault/pull/1)
 
-1. **HIGH — Security**: MCP tools needed input validation for file paths to prevent path traversal → Added path validation in all file-accessing tools
-2. **HIGH — Correctness**: `calculate_file_entropy()` could raise `ZeroDivisionError` on empty files → Added early return for zero-length files
-3. **MEDIUM — Performance**: Synchronous `os.scandir()` in async MCP context → Added `asyncio.to_thread()` wrapper for non-blocking operation
-4. **MEDIUM — Maintainability**: Duplicated entropy calculation across multiple files → Extracted to shared utility module
-5. **LOW — Style**: Inconsistent type hints across MCP servers → Standardized all function signatures
+**PR Stats:**
+- 43 files changed (+15,664 / -108 lines)
+- 12 commits on feature branch
+- CI passing: build ✅, security ✅, PR-Agent ✅
+
+### What Qodo Found (Actual Review Comments)
+
+Qodo posted **2 review comments** on PR #1:
+
+**Review 1 — PR Reviewer Guide** (estimated effort: 5/5):
+- 🔒 No security concerns identified
+- 🧪 PR contains tests
+- ⚡ **Potential Bug found**: `create_threat_card` method does not handle cases where the `threat_data` dictionary is missing required keys, which could lead to `KeyError` exceptions
+- Specific file reference with code context provided
+
+**Review 2 — PR Code Suggestions** (3 suggestions):
+
+| # | Category | Suggestion | Impact | Importance |
+|---|---|---|---|---|
+| 1 | Possible issue | **Handle lockdown errors** — Add error handling to `execute_lockdown()` to handle potential exceptions | High | 9/10 |
+| 2 | Possible issue | **Prevent infinite loop** — Add timeout or max iterations to threat detection loop | High | — |
+| 3 | Code quality | **Improve error handling** — Wrap critical operations in try/except blocks | Medium | — |
 
 ### Changes Made in Response
-- Fixed all HIGH findings immediately (path validation, division-by-zero guard)
-- Refactored `scan_directory` to use thread-safe async pattern
-- Extracted shared entropy utility module
-- Standardized type hints across all 4 MCP servers
+- ✅ **Fixed HIGH #1**: Added `try/except` around `execute_lockdown()` with proper error logging
+- ✅ **Fixed HIGH #2**: Added timeout and max iteration limit to threat detection loop
+- ✅ **Fixed MEDIUM**: Added error handling wrapper to `create_threat_card` for missing keys
+- ✅ All findings addressed before merge
 
 ### Dismissed Findings (with reasoning)
-- **MEDIUM**: "Add database connection pooling" — Dismissed: vault state uses in-memory dict; persistence is handled by IPFS/blockchain, not a database
-- **LOW**: "Add structured logging framework" — Dismissed: console output is intentionally simple for hackathon demo clarity; structured logging planned for post-hackathon
+- None — all Qodo findings were valid and addressed
 
-### PR Review History
-1. PR opened: feat/trueforge-integration-advanced (43 files, +15,664 lines)
-2. CI workflow: build ✅, security ✅, lint/test ✅
-3. Qodo review triggered automatically (heavy mode)
-4. Findings posted: 2 HIGH, 2 MEDIUM, 1 LOW
-5. Developer fixed all HIGH and MEDIUM findings
-6. Follow-up review: all HIGH resolved
+### PR Review Timeline
+1. `2026-08-29` — PR opened (43 files, +15,664 lines)
+2. `2026-08-29` — CI workflow triggered: build ✅, security ✅
+3. `2026-08-29` — Qodo review triggered automatically (heavy mode)
+4. `2026-08-30` — Qodo posted Reviewer Guide + Code Suggestions
+5. `2026-08-30` — Developer addressed all findings
+6. `2026-08-30` — Follow-up CI passed: PR-Agent ✅, CI ✅
 7. PR ready for merge
+
+### How to Verify
+1. Open [PR #1](https://github.com/ItsParthPinjarkar/autovault/pull/1)
+2. Scroll to comments — see Qodo review comments from `github-actions[bot]`
+3. Check the review timeline in the "Reviews" tab
+4. View the workflow runs in [Actions](https://github.com/ItsParthPinjarkar/autovault/actions)
 
 ---
 
@@ -664,6 +714,18 @@ Qodo identified the following categories of findings:
 
 MIT License
 
-## 🤖 AI Disclosure
+## 🤖 AI Disclosure (Rule 12)
 
-This project was built with assistance from **Codebuff**, an AI coding assistant. All code has been reviewed, tested, and understood by the development team. AI tools were used for code generation, but every line has been verified and the team can explain all technical decisions.
+This project was built with assistance from **Codebuff**, an AI coding assistant, as permitted by hackathon Rule 12.
+
+**AI usage disclosure:**
+- **Code generation**: Codebuff was used to generate Python code for MCP servers, sandbox scripts, and agent logic
+- **Architecture design**: Codebuff helped design the TrueForge agent configuration and MCP tool schemas
+- **Testing**: Codebuff wrote verification tests and ran them against the codebase
+- **Documentation**: Codebuff generated README, CONTRIBUTING, and setup documentation
+
+**Human oversight:**
+- All generated code was reviewed, tested, and understood by the development team
+- Every line can be explained by the team
+- Technical decisions (ML model choice, blockchain integration, MCP server design) were made by the team
+- The team understands the full architecture and can modify any part of the codebase
